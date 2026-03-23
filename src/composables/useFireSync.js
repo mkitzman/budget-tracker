@@ -17,7 +17,7 @@ function initAuth() {
   authInitialized = true
 
   onAuthStateChanged(auth, (u) => {
-    if (u) {
+    if (u && !u.isAnonymous) {
       uid.value = u.uid
       user.value = { displayName: u.displayName, email: u.email, photoURL: u.photoURL }
       isSignedIn.value = true
