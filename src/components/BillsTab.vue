@@ -1,0 +1,343 @@
+<script setup>
+import { ref, computed } from 'vue'
+import { useStore } from '../composables/useStore.js'
+import SeasonalRatesEditor from './SeasonalRatesEditor.vue'
+
+const store = useStore()
+
+const sortKey = ref('name')
+const sortAsc = ref(true)
+const expandedId = ref(null)
+const confirmDeleteId = ref(null)
+const tagInput = ref({})
+const sortFrozen = ref(false)
+
+function toggleSort(key) {
+  if (sortKey.value === key) {
+    sortAsc.value = !sortAsc.value
+  } else {
+    sortKey.value = key
+    sortAsc.value = true
+  }
+}
+
+function sortArrow(key) {
+  if (sortKey.value !== key) return '\u2195'
+  return sortAsc.value ? '\u2191' : '\u2193'
+}
+
+const sorted = computed(() => {
+  const arr = [...store.bills.value]
+  if (sortFrozen.value) return arr
+  arr.sort((a, b) => {
+    let va = a[sortKey.value]
+    let vb = b[sortKey.value]
+    if (sortKey.value === 'amount' || sortKey.value === 'dueDate') {
+      va = Number(va) || 0
+      vb = Number(vb) || 0
+    } else if (typeof va === 'string') {
+      va = va.toLowerCase()
+      vb = (vb || '').toLowerCase()
+    }
+    if (va < vb) return sortAsc.value ? -1 : 1
+    if (va > vb) return sortAsc.value ? 1 : -1
+    return 0
+  })
+  return arr
+})
+
+function updateField(id, field, event) {
+  let val = event.target.value
+  if (field === 'amount' || field === 'dueDate') val = Number(val) || 0
+  if (field === 'fixed') val = event.target.checked
+  store.updateBill(id, field, val)
+}
+
+function toggleExpand(id) {
+  expandedId.value = expandedId.value === id ? null : id
+}
+
+function updateSeasonalRates(id, rates) {
+  store.updateBill(id, 'seasonalRates', rates)
+}
+
+function addTag(id) {
+  const tag = (tagInput.value[id] || '').trim()
+  if (!tag) return
+  const bill = store.bills.value.find(b => b.id === id)
+  if (bill && !bill.tags.includes(tag)) {
+    bill.tags.push(tag)
+  }
+  tagInput.value[id] = ''
+}
+
+function removeTag(id, tag) {
+  const bill = store.bills.value.find(b => b.id === id)
+  if (bill) {
+    bill.tags = bill.tags.filter(t => t !== tag)
+  }
+}
+
+function confirmDelete(id) {
+  confirmDeleteId.value = id
+}
+
+function doDelete() {
+  store.deleteBill(confirmDeleteId.value)
+  confirmDeleteId.value = null
+}
+
+function addBill() {
+  store.addBill()
+  sortFrozen.value = true
+}
+
+function onTableBlur(event) {
+  const wrapper = event.currentTarget
+  setTimeout(() => {
+    if (!wrapper.contains(document.activeElement)) {
+      sortFrozen.value = false
+    }
+  }, 0)
+}
+
+const hasSeasonal = (bill) => bill.seasonalRates && Object.keys(bill.seasonalRates).length > 0
+
+const fmt = (n) => Number(n).toFixed(2)
+</script>
+
+<template>
+  <div>
+    <div class="flex items-center justify-between mb-16">
+      <h2>Bills</h2>
+      <button class="btn" @click="addBill">+ Add Bill</button>
+    </div>
+
+    <div v-if="store.bills.value.length === 0" class="empty-state">
+      <div class="icon">&#128195;</div>
+      <p>No bills yet. Add your first bill to get started.</p>
+    </div>
+
+    <div v-else class="card table-wrapper" @focusout="onTableBlur">
+      <table class="data-table bill-table">
+        <thead>
+          <tr>
+            <th :class="{ sorted: sortKey === 'name' }" @click="toggleSort('name')">
+              Name <span class="sort-arrow">{{ sortArrow('name') }}</span>
+            </th>
+            <th class="amount-col" :class="{ sorted: sortKey === 'amount' }" @click="toggleSort('amount')">
+              Amount <span class="sort-arrow">{{ sortArrow('amount') }}</span>
+            </th>
+            <th :class="{ sorted: sortKey === 'category' }" @click="toggleSort('category')">
+              Category <span class="sort-arrow">{{ sortArrow('category') }}</span>
+            </th>
+            <th>Tags</th>
+            <th :class="{ sorted: sortKey === 'dueDate' }" @click="toggleSort('dueDate')">
+              Due Date <span class="sort-arrow">{{ sortArrow('dueDate') }}</span>
+            </th>
+            <th>Notes</th>
+            <th :class="{ sorted: sortKey === 'fixed' }" @click="toggleSort('fixed')">
+              Fixed <span class="sort-arrow">{{ sortArrow('fixed') }}</span>
+            </th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <template v-for="bill in sorted" :key="bill.id">
+            <tr>
+              <td class="cell-edit">
+                <input
+                  type="text"
+                  :value="bill.name"
+                  placeholder="Bill name"
+                  @input="updateField(bill.id, 'name', $event)"
+                />
+              </td>
+              <td :class="hasSeasonal(bill) ? 'amount-col' : 'cell-edit amount-col'">
+                <div class="amount-cell">
+                  <span v-if="!bill.fixed" class="approx">~</span>
+                  <span v-if="hasSeasonal(bill)" class="seasonal-amount">${{ fmt(store.getBillCurrentAmount(bill)) }}</span>
+                  <template v-else>
+                    <span class="dollar-prefix">$</span>
+                    <input
+                      type="number"
+                      :value="bill.amount"
+                      @input="updateField(bill.id, 'amount', $event)"
+                      style="width: 100px"
+                    />
+                  </template>
+                </div>
+              </td>
+              <td class="cell-edit">
+                <select :value="bill.category || 'Needs'" @change="updateField(bill.id, 'category', $event)">
+                  <option v-for="c in store.categories" :key="c" :value="c">{{ c }}</option>
+                </select>
+              </td>
+              <td>
+                <div class="tags-cell">
+                  <span v-for="tag in bill.tags" :key="tag" class="chip" @click="removeTag(bill.id, tag)">
+                    {{ tag }} &times;
+                  </span>
+                  <input
+                    type="text"
+                    v-model="tagInput[bill.id]"
+                    placeholder="+ tag"
+                    class="tag-input"
+                    @keydown.enter="addTag(bill.id)"
+                  />
+                </div>
+              </td>
+              <td class="cell-edit">
+                <input
+                  type="number"
+                  :value="bill.dueDate"
+                  min="1" max="31"
+                  @input="updateField(bill.id, 'dueDate', $event)"
+                  style="width: 60px"
+                />
+              </td>
+              <td class="cell-edit">
+                <input
+                  type="text"
+                  :value="bill.notes"
+                  placeholder="Notes"
+                  @input="updateField(bill.id, 'notes', $event)"
+                />
+              </td>
+              <td>
+                <label class="toggle">
+                  <input type="checkbox" :checked="bill.fixed" @change="updateField(bill.id, 'fixed', $event)" />
+                  <span class="slider"></span>
+                </label>
+              </td>
+              <td>
+                <div class="row-actions">
+                  <button class="btn-icon" :class="{ 'seasonal-active': hasSeasonal(bill) }" title="Seasonal rates" @click="toggleExpand(bill.id)">&#128197;</button>
+                  <button class="btn-icon" title="Delete" @click="confirmDelete(bill.id)">&#128465;</button>
+                </div>
+              </td>
+            </tr>
+            <tr v-if="expandedId === bill.id">
+              <td colspan="8" style="background: var(--surface-secondary); padding: 16px;">
+                <SeasonalRatesEditor
+                  :modelValue="bill.seasonalRates || {}"
+                  :baseAmount="Number(bill.amount) || 0"
+                  @update:modelValue="updateSeasonalRates(bill.id, $event)"
+                />
+              </td>
+            </tr>
+          </template>
+        </tbody>
+        <tfoot>
+          <tr class="totals-row">
+            <td style="text-align: right; font-weight: 600;">Total:</td>
+            <td class="amount-col" style="font-weight: 700; color: var(--orange);">${{ fmt(store.totalBills.value) }}</td>
+            <td colspan="6"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <!-- Confirm delete dialog -->
+    <div v-if="confirmDeleteId" class="confirm-overlay" @click.self="confirmDeleteId = null">
+      <div class="confirm-dialog">
+        <h3>Delete Bill?</h3>
+        <p>This action cannot be undone.</p>
+        <div class="actions">
+          <button class="btn btn-secondary" @click="confirmDeleteId = null">Cancel</button>
+          <button class="btn btn-danger" @click="doDelete">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.amount-cell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.approx {
+  color: var(--text-secondary);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.amount-col {
+  text-align: right;
+}
+
+.amount-col input {
+  text-align: right;
+}
+
+.dollar-prefix {
+  font-size: 14px;
+  color: var(--text-secondary);
+  padding-left: 12px;
+}
+
+.seasonal-amount {
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  padding: 10px 12px 10px 0;
+}
+
+.seasonal-active {
+  background: rgba(10, 132, 255, 0.1);
+  color: var(--accent) !important;
+  border-radius: 50%;
+}
+
+.tags-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.tags-cell .chip {
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.tags-cell .chip:hover {
+  opacity: 0.6;
+}
+
+.tag-input {
+  border: none;
+  background: transparent;
+  padding: 4px 6px;
+  font-size: 12px;
+  width: 60px;
+  outline: none;
+}
+
+.tag-input:focus {
+  box-shadow: none;
+}
+
+.row-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.totals-row td {
+  border-top: 2px solid var(--border);
+  padding-top: 12px;
+}
+
+.bill-table {
+  min-width: 800px;
+}
+
+.bill-table th:first-child,
+.bill-table td:first-child {
+  min-width: 160px;
+}
+</style>
