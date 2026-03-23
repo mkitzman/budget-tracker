@@ -3,12 +3,12 @@ import { getFirestore } from 'firebase/firestore'
 import { getAuth } from 'firebase/auth'
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyAlRSb5zXusTw4BoniKDwMthFq7vHwxadw',
-  authDomain: 'budget-tracker-23666.firebaseapp.com',
-  projectId: 'budget-tracker-23666',
-  storageBucket: 'budget-tracker-23666.firebasestorage.app',
-  messagingSenderId: '111538509821',
-  appId: '1:111538509821:web:223b93d059133895776b94'
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 }
 
 const app = initializeApp(firebaseConfig)
