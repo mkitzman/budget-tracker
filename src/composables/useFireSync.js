@@ -1,11 +1,13 @@
 import { ref, watch } from 'vue'
 import { doc, setDoc, onSnapshot } from 'firebase/firestore'
-import { signInAnonymously, onAuthStateChanged } from 'firebase/auth'
+import { GoogleAuthProvider, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth'
 import { db, auth } from '../firebase.js'
 
 const uid = ref(null)
+const user = ref(null)
 const isReady = ref(false)
 const isSyncing = ref(false)
+const isSignedIn = ref(false)
 
 // Single shared auth init
 let authInitialized = false
@@ -14,15 +16,34 @@ function initAuth() {
   if (authInitialized) return
   authInitialized = true
 
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      uid.value = user.uid
+  onAuthStateChanged(auth, (u) => {
+    if (u) {
+      uid.value = u.uid
+      user.value = { displayName: u.displayName, email: u.email, photoURL: u.photoURL }
+      isSignedIn.value = true
+    } else {
+      uid.value = null
+      user.value = null
+      isSignedIn.value = false
     }
   })
+}
 
-  signInAnonymously(auth).catch((err) => {
-    console.warn('Firebase auth failed, using localStorage only:', err.message)
-  })
+export async function signInWithGoogle() {
+  const provider = new GoogleAuthProvider()
+  try {
+    await signInWithPopup(auth, provider)
+  } catch (err) {
+    console.warn('Google sign-in failed:', err.message)
+  }
+}
+
+export async function signOut() {
+  try {
+    await firebaseSignOut(auth)
+  } catch (err) {
+    console.warn('Sign-out failed:', err.message)
+  }
 }
 
 /**
@@ -96,7 +117,7 @@ export function useFireSync(localKey, defaultValue) {
 }
 
 export function useSyncStatus() {
-  return { uid, isReady, isSyncing }
+  return { uid, user, isReady, isSyncing, isSignedIn }
 }
 
 // localStorage helpers
