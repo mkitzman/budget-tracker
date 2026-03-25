@@ -45,7 +45,7 @@ const tabComponent = computed(() => {
 <template>
     <header class="app-header">
       <div>
-        <h1>Budget Tracker</h1>
+        <h1 class="app-title">BittyBudget</h1>
         <p class="text-secondary text-sm">
           Subscriptions & bills at a glance
           <span v-if="store.syncStatus.uid.value" class="sync-badge" :class="{ syncing: store.syncStatus.isSyncing.value }" title="Synced to cloud">&#9679;</span>
@@ -103,6 +103,10 @@ const tabComponent = computed(() => {
 
 <style scoped>
 /* Header */
+.app-title {
+  font-family: 'Sora', system-ui;
+}
+
 .app-header {
   display: flex;
   align-items: center;
@@ -264,7 +268,7 @@ const tabComponent = computed(() => {
   font-family: var(--font);
   font-size: 14px;
   font-weight: 500;
-  padding: 6px 28px 6px 12px;
+  padding: 4px 28px 4px 12px;
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface);

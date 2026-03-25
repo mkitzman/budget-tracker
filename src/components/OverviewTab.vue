@@ -236,6 +236,7 @@ const subsBreakdown = computed(() => {
   display: flex;
   align-items: baseline;
   justify-content: center;
+  position: relative;
   gap: 2px;
   cursor: pointer;
   padding: 8px;
@@ -260,6 +261,7 @@ const subsBreakdown = computed(() => {
 }
 
 .edit-hint {
+  position: absolute;
   margin-left: 8px;
   opacity: 0;
   transition: opacity 0.2s;

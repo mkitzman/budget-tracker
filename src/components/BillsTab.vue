@@ -9,7 +9,6 @@ const sortKey = ref('name')
 const sortAsc = ref(true)
 const expandedId = ref(null)
 const confirmDeleteId = ref(null)
-const tagInput = ref({})
 const sortFrozen = ref(false)
 const lastSorted = ref(null)
 
@@ -51,7 +50,6 @@ const sorted = computed(() => {
 function updateField(id, field, event) {
   let val = event.target.value
   if (field === 'amount' || field === 'dueDate') val = Number(val) || 0
-  if (field === 'fixed') val = event.target.checked
   store.updateBill(id, field, val)
 }
 
@@ -61,23 +59,6 @@ function toggleExpand(id) {
 
 function updateSeasonalRates(id, rates) {
   store.updateBill(id, 'seasonalRates', rates)
-}
-
-function addTag(id) {
-  const tag = (tagInput.value[id] || '').trim()
-  if (!tag) return
-  const bill = store.bills.value.find(b => b.id === id)
-  if (bill && !bill.tags.includes(tag)) {
-    bill.tags.push(tag)
-  }
-  tagInput.value[id] = ''
-}
-
-function removeTag(id, tag) {
-  const bill = store.bills.value.find(b => b.id === id)
-  if (bill) {
-    bill.tags = bill.tags.filter(t => t !== tag)
-  }
 }
 
 function confirmDelete(id) {
@@ -133,14 +114,10 @@ const fmt = (n) => Number(n).toFixed(2)
             <th :class="{ sorted: sortKey === 'category' }" @click="toggleSort('category')">
               Category <span class="sort-arrow">{{ sortArrow('category') }}</span>
             </th>
-            <th>Tags</th>
             <th :class="{ sorted: sortKey === 'dueDate' }" @click="toggleSort('dueDate')">
               Due Date <span class="sort-arrow">{{ sortArrow('dueDate') }}</span>
             </th>
             <th>Notes</th>
-            <th :class="{ sorted: sortKey === 'fixed' }" @click="toggleSort('fixed')">
-              Fixed <span class="sort-arrow">{{ sortArrow('fixed') }}</span>
-            </th>
             <th></th>
           </tr>
         </thead>
@@ -158,10 +135,8 @@ const fmt = (n) => Number(n).toFixed(2)
               </td>
               <td :class="hasSeasonal(bill) ? 'amount-col' : 'cell-edit amount-col'">
                 <div class="amount-cell">
-                  <span v-if="!bill.fixed" class="approx">~</span>
                   <span v-if="hasSeasonal(bill)" class="seasonal-amount">${{ fmt(store.getBillCurrentAmount(bill)) }}</span>
                   <template v-else>
-                    <span class="dollar-prefix">$</span>
                     <input
                       type="number"
                       :value="bill.amount"
@@ -176,20 +151,6 @@ const fmt = (n) => Number(n).toFixed(2)
                   <option v-for="c in store.categories" :key="c" :value="c">{{ c }}</option>
                 </select>
               </td>
-              <td>
-                <div class="tags-cell">
-                  <span v-for="tag in bill.tags" :key="tag" class="chip" @click="removeTag(bill.id, tag)">
-                    {{ tag }} &times;
-                  </span>
-                  <input
-                    type="text"
-                    v-model="tagInput[bill.id]"
-                    placeholder="+ tag"
-                    class="tag-input"
-                    @keydown.enter="addTag(bill.id)"
-                  />
-                </div>
-              </td>
               <td class="cell-edit">
                 <input
                   type="number"
@@ -200,18 +161,12 @@ const fmt = (n) => Number(n).toFixed(2)
                 />
               </td>
               <td class="cell-edit">
-                <input
-                  type="text"
+                <textarea
                   :value="bill.notes"
                   placeholder="Notes"
+                  class="notes-input"
                   @input="updateField(bill.id, 'notes', $event)"
-                />
-              </td>
-              <td>
-                <label class="toggle">
-                  <input type="checkbox" :checked="bill.fixed" @change="updateField(bill.id, 'fixed', $event)" />
-                  <span class="slider"></span>
-                </label>
+                ></textarea>
               </td>
               <td>
                 <div class="row-actions">
@@ -221,7 +176,7 @@ const fmt = (n) => Number(n).toFixed(2)
               </td>
             </tr>
             <tr v-if="expandedId === bill.id">
-              <td colspan="8" style="background: var(--surface-secondary); padding: 16px;">
+              <td colspan="6" style="background: var(--surface-secondary); padding: 16px;">
                 <SeasonalRatesEditor
                   :modelValue="bill.seasonalRates || {}"
                   :baseAmount="Number(bill.amount) || 0"
@@ -235,7 +190,7 @@ const fmt = (n) => Number(n).toFixed(2)
           <tr class="totals-row">
             <td style="text-align: right; font-weight: 600;">Total:</td>
             <td class="amount-col" style="font-weight: 700; color: var(--orange);">${{ fmt(store.totalBills.value) }}</td>
-            <td colspan="6"></td>
+            <td colspan="4"></td>
           </tr>
         </tfoot>
       </table>
@@ -263,24 +218,12 @@ const fmt = (n) => Number(n).toFixed(2)
   gap: 2px;
 }
 
-.approx {
-  color: var(--text-secondary);
-  font-size: 16px;
-  font-weight: 600;
-}
-
 .amount-col {
   text-align: right;
 }
 
 .amount-col input {
   text-align: right;
-}
-
-.dollar-prefix {
-  font-size: 14px;
-  color: var(--text-secondary);
-  padding-left: 12px;
 }
 
 .seasonal-amount {
@@ -296,33 +239,10 @@ const fmt = (n) => Number(n).toFixed(2)
   border-radius: 50%;
 }
 
-.tags-cell {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  align-items: center;
-}
-
-.tags-cell .chip {
-  cursor: pointer;
-  transition: opacity 0.15s;
-}
-
-.tags-cell .chip:hover {
-  opacity: 0.6;
-}
-
-.tag-input {
-  border: none;
-  background: transparent;
-  padding: 4px 6px;
-  font-size: 12px;
-  width: 60px;
-  outline: none;
-}
-
-.tag-input:focus {
-  box-shadow: none;
+.notes-input {
+  field-sizing: content;
+  resize: none;
+  min-width: 120px;
 }
 
 .row-actions {
