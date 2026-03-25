@@ -11,6 +11,7 @@ const expandedId = ref(null)
 const confirmDeleteId = ref(null)
 const tagInput = ref({})
 const sortFrozen = ref(false)
+const lastSorted = ref(null)
 
 function toggleSort(key) {
   if (sortKey.value === key) {
@@ -28,7 +29,7 @@ function sortArrow(key) {
 
 const sorted = computed(() => {
   const arr = [...store.bills.value]
-  if (sortFrozen.value) return arr
+  if (sortFrozen.value && lastSorted.value) return lastSorted.value
   arr.sort((a, b) => {
     let va = a[sortKey.value]
     let vb = b[sortKey.value]
@@ -43,6 +44,7 @@ const sorted = computed(() => {
     if (va > vb) return sortAsc.value ? 1 : -1
     return 0
   })
+  lastSorted.value = arr
   return arr
 })
 
@@ -151,6 +153,7 @@ const fmt = (n) => Number(n).toFixed(2)
                   :value="bill.name"
                   placeholder="Bill name"
                   @input="updateField(bill.id, 'name', $event)"
+                  @focus="sortFrozen = true"
                 />
               </td>
               <td :class="hasSeasonal(bill) ? 'amount-col' : 'cell-edit amount-col'">
