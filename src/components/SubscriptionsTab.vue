@@ -7,8 +7,8 @@ const store = useStore()
 const sortKey = ref('name')
 const sortAsc = ref(true)
 const confirmDeleteId = ref(null)
-const tagInput = ref({})
 const sortFrozen = ref(false)
+const lastSorted = ref(null)
 
 const frequencies = ['Monthly', 'Quarterly', 'Yearly']
 
@@ -28,7 +28,7 @@ function sortArrow(key) {
 
 const sorted = computed(() => {
   const arr = [...store.subscriptions.value]
-  if (sortFrozen.value) return arr
+  if (sortFrozen.value && lastSorted.value) return lastSorted.value
   arr.sort((a, b) => {
     let va, vb
     if (sortKey.value === 'monthlyCost') {
@@ -52,6 +52,7 @@ const sorted = computed(() => {
     if (va > vb) return sortAsc.value ? 1 : -1
     return 0
   })
+  lastSorted.value = arr
   return arr
 })
 
@@ -59,23 +60,6 @@ function updateField(id, field, event) {
   let val = event.target.value
   if (field === 'cost' || field === 'renewalDate') val = Number(val) || 0
   store.updateSubscription(id, field, val)
-}
-
-function addTag(id) {
-  const tag = (tagInput.value[id] || '').trim()
-  if (!tag) return
-  const sub = store.subscriptions.value.find(s => s.id === id)
-  if (sub && !sub.tags.includes(tag)) {
-    sub.tags.push(tag)
-  }
-  tagInput.value[id] = ''
-}
-
-function removeTag(id, tag) {
-  const sub = store.subscriptions.value.find(s => s.id === id)
-  if (sub) {
-    sub.tags = sub.tags.filter(t => t !== tag)
-  }
 }
 
 function confirmDelete(id) {
@@ -95,6 +79,11 @@ const totalMonthly = computed(() =>
 const totalYearly = computed(() =>
   store.subscriptions.value
     .reduce((sum, s) => sum + store.yearlyAmount(s), 0)
+)
+
+const totalCost = computed(() =>
+  store.subscriptions.value
+    .reduce((sum, s) => sum + (Number(s.cost) || 0), 0)
 )
 
 function addSubscription() {
@@ -136,11 +125,10 @@ const fmt = (n) => Number(n).toFixed(2)
             <th :class="{ sorted: sortKey === 'category' }" @click="toggleSort('category')">
               Category <span class="sort-arrow">{{ sortArrow('category') }}</span>
             </th>
-            <th>Tags</th>
             <th :class="{ sorted: sortKey === 'frequency' }" @click="toggleSort('frequency')">
               Frequency <span class="sort-arrow">{{ sortArrow('frequency') }}</span>
             </th>
-            <th :class="{ sorted: sortKey === 'renewalDate' }" @click="toggleSort('renewalDate')">
+            <th class="day-col" :class="{ sorted: sortKey === 'renewalDate' }" @click="toggleSort('renewalDate')">
               Day <span class="sort-arrow">{{ sortArrow('renewalDate') }}</span>
             </th>
             <th class="money-col" :class="{ sorted: sortKey === 'cost' }" @click="toggleSort('cost')">
@@ -159,66 +147,49 @@ const fmt = (n) => Number(n).toFixed(2)
         <tbody>
           <tr v-for="sub in sorted" :key="sub.id">
             <td class="cell-edit">
-              <input
-                type="text"
+              <textarea
                 :value="sub.name"
                 placeholder="Name"
+                class="name-input"
                 @input="updateField(sub.id, 'name', $event)"
-              />
+                @focus="sortFrozen = true"
+              ></textarea>
             </td>
             <td class="cell-edit">
               <select :value="sub.category || 'Needs'" @change="updateField(sub.id, 'category', $event)">
                 <option v-for="c in store.categories" :key="c" :value="c">{{ c }}</option>
               </select>
             </td>
-            <td>
-              <div class="tags-cell">
-                <span v-for="tag in sub.tags" :key="tag" class="chip" @click="removeTag(sub.id, tag)">
-                  {{ tag }} &times;
-                </span>
-                <input
-                  type="text"
-                  v-model="tagInput[sub.id]"
-                  placeholder="+ tag"
-                  class="tag-input"
-                  @keydown.enter="addTag(sub.id)"
-                />
-              </div>
-            </td>
             <td class="cell-edit">
               <select :value="sub.frequency" @change="updateField(sub.id, 'frequency', $event)">
                 <option v-for="f in frequencies" :key="f" :value="f">{{ f }}</option>
               </select>
             </td>
-            <td class="cell-edit">
+            <td class="cell-edit day-col">
               <input
                 type="number"
                 :value="sub.renewalDate"
                 min="1" max="31"
                 @input="updateField(sub.id, 'renewalDate', $event)"
-                style="width: 60px"
               />
             </td>
             <td class="cell-edit money-col">
-              <div class="cost-cell">
-                <span class="dollar-prefix">$</span>
-                <input
-                  type="number"
-                  :value="sub.cost"
-                  @input="updateField(sub.id, 'cost', $event)"
-                  style="width: 90px"
-                />
-              </div>
+              <input
+                type="number"
+                :value="sub.cost"
+                @input="updateField(sub.id, 'cost', $event)"
+                style="width: 90px"
+              />
             </td>
             <td class="read-only money-col">${{ fmt(store.monthlyAmount(sub)) }}</td>
             <td class="read-only money-col">${{ fmt(store.yearlyAmount(sub)) }}</td>
             <td class="cell-edit">
-              <input
-                type="text"
+              <textarea
                 :value="sub.notes"
                 placeholder="Notes"
+                class="notes-input"
                 @input="updateField(sub.id, 'notes', $event)"
-              />
+              ></textarea>
             </td>
             <td>
               <button class="btn-icon" title="Delete" @click="confirmDelete(sub.id)">&#128465;</button>
@@ -227,7 +198,8 @@ const fmt = (n) => Number(n).toFixed(2)
         </tbody>
         <tfoot>
           <tr class="totals-row">
-            <td colspan="6" style="text-align: right; font-weight: 600;">Totals:</td>
+            <td colspan="4" style="text-align: right; font-weight: 600;">Totals:</td>
+            <td class="read-only money-col" style="font-weight: 700; color: var(--accent);">{{ fmt(totalCost) }}</td>
             <td class="read-only money-col" style="font-weight: 700; color: var(--accent);">${{ fmt(totalMonthly) }}</td>
             <td class="read-only money-col" style="font-weight: 700; color: var(--accent);">${{ fmt(totalYearly) }}</td>
             <td colspan="2"></td>
@@ -251,35 +223,6 @@ const fmt = (n) => Number(n).toFixed(2)
 </template>
 
 <style scoped>
-.tags-cell {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  align-items: center;
-}
-
-.tags-cell .chip {
-  cursor: pointer;
-  transition: opacity 0.15s;
-}
-
-.tags-cell .chip:hover {
-  opacity: 0.6;
-}
-
-.tag-input {
-  border: none;
-  background: transparent;
-  padding: 4px 6px;
-  font-size: 12px;
-  width: 60px;
-  outline: none;
-}
-
-.tag-input:focus {
-  box-shadow: none;
-}
-
 .read-only {
   padding: 10px 12px;
   font-variant-numeric: tabular-nums;
@@ -292,17 +235,6 @@ const fmt = (n) => Number(n).toFixed(2)
 
 .money-col input {
   text-align: right;
-}
-
-.cost-cell {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.dollar-prefix {
-  font-size: 14px;
-  color: var(--text-secondary);
 }
 
 .totals-row td {
@@ -321,5 +253,26 @@ const fmt = (n) => Number(n).toFixed(2)
 
 .sub-table .read-only {
   white-space: nowrap;
+}
+
+.name-input {
+  field-sizing: content;
+  resize: none;
+  min-width: 140px;
+}
+
+.notes-input {
+  field-sizing: content;
+  resize: none;
+  min-width: 120px;
+}
+
+.day-col {
+  width: 70px;
+  max-width: 70px;
+}
+
+.day-col input {
+  width: 100%;
 }
 </style>
