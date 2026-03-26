@@ -51,6 +51,10 @@ const calendarDays = computed(() => {
       return Number(b.dueDate) === d
     })
     const subsOnDay = store.subscriptions.value.filter(s => {
+      if (s.seasonalRates && Object.keys(s.seasonalRates).length > 0) {
+        const rate = s.seasonalRates[viewMonth.value]
+        if (rate === 0 || rate === '0') return false
+      }
       return Number(s.renewalDate) === d
     })
     days.push({

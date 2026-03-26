@@ -25,7 +25,7 @@ export function useStore() {
 
   const totalSubscriptions = computed(() => {
     return subscriptions.value
-      .reduce((sum, s) => sum + monthlyAmount(s), 0)
+      .reduce((sum, s) => sum + getSubscriptionCurrentAmount(s), 0)
   })
 
   const remaining = computed(() => {
@@ -49,7 +49,7 @@ export function useStore() {
 
       const subItems = subscriptions.value
         .filter(s => s.category === cat)
-        .map(s => ({ name: s.name || 'Unnamed', amount: monthlyAmount(s), type: 'subscription' }))
+        .map(s => ({ name: s.name || 'Unnamed', amount: getSubscriptionCurrentAmount(s), type: 'subscription' }))
 
       const expItems = monthExpenses.value
         .filter(e => e.category === cat)
@@ -115,6 +115,7 @@ export function useStore() {
       renewalDate: 1,
       cost: 0,
       notes: '',
+      seasonalRates: {},
       category: 'Needs'
     })
   }
@@ -184,6 +185,14 @@ export function useStore() {
     })
   })
 
+  function getSubscriptionCurrentAmount(sub) {
+    if (sub.seasonalRates && Object.keys(sub.seasonalRates).length > 0) {
+      const rate = sub.seasonalRates[selectedMonth.value]
+      return rate !== undefined && rate !== null ? Number(rate) : Number(sub.cost) || 0
+    }
+    return monthlyAmount(sub)
+  }
+
   function getBillCurrentAmount(bill) {
     if (bill.seasonalRates && Object.keys(bill.seasonalRates).length > 0) {
       const rate = bill.seasonalRates[selectedMonth.value]
@@ -207,6 +216,7 @@ export function useStore() {
     addSubscription,
     updateSubscription,
     deleteSubscription,
+    getSubscriptionCurrentAmount,
     getBillCurrentAmount,
     selectedMonth,
     selectedYear,

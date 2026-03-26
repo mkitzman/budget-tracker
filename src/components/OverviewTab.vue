@@ -63,10 +63,10 @@ const billsBreakdown = computed(() => {
 })
 
 const subsBreakdown = computed(() => {
-  const active = store.subscriptions.value.filter(s => store.monthlyAmount(s) > 0)
+  const active = store.subscriptions.value.filter(s => store.getSubscriptionCurrentAmount(s) > 0)
   return {
     labels: active.map(s => s.name || 'Unnamed'),
-    data: active.map(s => store.monthlyAmount(s)),
+    data: active.map(s => store.getSubscriptionCurrentAmount(s)),
     colors: []
   }
 })

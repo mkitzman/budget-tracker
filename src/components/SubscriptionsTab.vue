@@ -1,12 +1,14 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useStore } from '../composables/useStore.js'
+import SeasonalRatesEditor from './SeasonalRatesEditor.vue'
 
 const store = useStore()
 
 const sortKey = ref('name')
 const sortAsc = ref(true)
 const confirmDeleteId = ref(null)
+const expandedId = ref(null)
 const sortFrozen = ref(false)
 const lastSorted = ref(null)
 
@@ -71,9 +73,19 @@ function doDelete() {
   confirmDeleteId.value = null
 }
 
+function toggleExpand(id) {
+  expandedId.value = expandedId.value === id ? null : id
+}
+
+function updateSeasonalRates(id, rates) {
+  store.updateSubscription(id, 'seasonalRates', rates)
+}
+
+const hasSeasonal = (sub) => sub.seasonalRates && Object.keys(sub.seasonalRates).length > 0
+
 const totalMonthly = computed(() =>
   store.subscriptions.value
-    .reduce((sum, s) => sum + store.monthlyAmount(s), 0)
+    .reduce((sum, s) => sum + store.getSubscriptionCurrentAmount(s), 0)
 )
 
 const totalYearly = computed(() =>
@@ -146,56 +158,72 @@ const fmt = (n) => Number(n).toFixed(2)
           </tr>
         </thead>
         <tbody>
-          <tr v-for="sub in sorted" :key="sub.id">
-            <td class="cell-edit">
-              <textarea
-                :value="sub.name"
-                placeholder="Name"
-                class="name-input"
-                @input="updateField(sub.id, 'name', $event)"
-                @focus="sortFrozen = true"
-              ></textarea>
-            </td>
-            <td class="cell-edit">
-              <select :value="sub.category || 'Needs'" @change="updateField(sub.id, 'category', $event)">
-                <option v-for="c in store.categories" :key="c" :value="c">{{ c }}</option>
-              </select>
-            </td>
-            <td class="cell-edit">
-              <select :value="sub.frequency" @change="updateField(sub.id, 'frequency', $event)">
-                <option v-for="f in frequencies" :key="f" :value="f">{{ f }}</option>
-              </select>
-            </td>
-            <td class="cell-edit day-col">
-              <input
-                type="number"
-                :value="sub.renewalDate"
-                min="1" max="31"
-                @input="updateField(sub.id, 'renewalDate', $event)"
-              />
-            </td>
-            <td class="cell-edit money-col">
-              <input
-                type="number"
-                :value="sub.cost"
-                @input="updateField(sub.id, 'cost', $event)"
-                style="width: 90px"
-              />
-            </td>
-            <td class="read-only money-col">${{ fmt(store.monthlyAmount(sub)) }}</td>
-            <td class="read-only money-col">${{ fmt(store.yearlyAmount(sub)) }}</td>
-            <td class="cell-edit">
-              <textarea
-                :value="sub.notes"
-                placeholder="Notes"
-                class="notes-input"
-                @input="updateField(sub.id, 'notes', $event)"
-              ></textarea>
-            </td>
-            <td>
-              <button class="btn-icon" title="Delete" @click="confirmDelete(sub.id)">&#128465;</button>
-            </td>
-          </tr>
+          <template v-for="sub in sorted" :key="sub.id">
+            <tr>
+              <td class="cell-edit">
+                <textarea
+                  :value="sub.name"
+                  placeholder="Name"
+                  class="name-input"
+                  @input="updateField(sub.id, 'name', $event)"
+                  @focus="sortFrozen = true"
+                ></textarea>
+              </td>
+              <td class="cell-edit">
+                <select :value="sub.category || 'Needs'" @change="updateField(sub.id, 'category', $event)">
+                  <option v-for="c in store.categories" :key="c" :value="c">{{ c }}</option>
+                </select>
+              </td>
+              <td class="cell-edit">
+                <select :value="sub.frequency" @change="updateField(sub.id, 'frequency', $event)">
+                  <option v-for="f in frequencies" :key="f" :value="f">{{ f }}</option>
+                </select>
+              </td>
+              <td class="cell-edit day-col">
+                <input
+                  type="number"
+                  :value="sub.renewalDate"
+                  min="1" max="31"
+                  @input="updateField(sub.id, 'renewalDate', $event)"
+                />
+              </td>
+              <td :class="hasSeasonal(sub) ? 'money-col' : 'cell-edit money-col'">
+                <span v-if="hasSeasonal(sub)" class="seasonal-amount">${{ fmt(store.getSubscriptionCurrentAmount(sub)) }}</span>
+                <input
+                  v-else
+                  type="number"
+                  :value="sub.cost"
+                  @input="updateField(sub.id, 'cost', $event)"
+                  style="width: 90px"
+                />
+              </td>
+              <td class="read-only money-col">${{ fmt(store.getSubscriptionCurrentAmount(sub)) }}</td>
+              <td class="read-only money-col">${{ fmt(store.yearlyAmount(sub)) }}</td>
+              <td class="cell-edit">
+                <textarea
+                  :value="sub.notes"
+                  placeholder="Notes"
+                  class="notes-input"
+                  @input="updateField(sub.id, 'notes', $event)"
+                ></textarea>
+              </td>
+              <td>
+                <div class="row-actions">
+                  <button class="btn-icon" :class="{ 'seasonal-active': hasSeasonal(sub) }" title="Monthly rates" @click="toggleExpand(sub.id)">&#128197;</button>
+                  <button class="btn-icon" title="Delete" @click="confirmDelete(sub.id)">&#128465;</button>
+                </div>
+              </td>
+            </tr>
+            <tr v-if="expandedId === sub.id">
+              <td colspan="9" style="background: var(--surface-secondary); padding: 16px;">
+                <SeasonalRatesEditor
+                  :modelValue="sub.seasonalRates || {}"
+                  :baseAmount="Number(sub.cost) || 0"
+                  @update:modelValue="updateSeasonalRates(sub.id, $event)"
+                />
+              </td>
+            </tr>
+          </template>
         </tbody>
         <tfoot>
           <tr class="totals-row">
@@ -266,6 +294,24 @@ const fmt = (n) => Number(n).toFixed(2)
   field-sizing: content;
   resize: none;
   min-width: 120px;
+}
+
+.seasonal-amount {
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  padding: 10px 12px 10px 0;
+}
+
+.seasonal-active {
+  background: rgba(10, 132, 255, 0.1);
+  color: var(--accent) !important;
+  border-radius: 50%;
+}
+
+.row-actions {
+  display: flex;
+  gap: 2px;
 }
 
 .day-col {
