@@ -88,6 +88,7 @@ const totalCost = computed(() =>
 
 function addSubscription() {
   store.addSubscription()
+  lastSorted.value = null
   sortFrozen.value = true
 }
 

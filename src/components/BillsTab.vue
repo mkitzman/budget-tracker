@@ -72,6 +72,7 @@ function doDelete() {
 
 function addBill() {
   store.addBill()
+  lastSorted.value = null
   sortFrozen.value = true
 }
 
