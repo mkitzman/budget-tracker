@@ -171,11 +171,11 @@ const fmt = (n) => Number(n).toFixed(2)
                 ></textarea>
               </td>
               <td class="cell-edit">
-                <select :value="sub.category || 'Needs'" @change="updateField(sub.id, 'category', $event)">
+                <select :value="sub.category || 'Needs'" @change="updateField(sub.id, 'category', $event)" :style="{ color: categoryColors[sub.category] || categoryColors.Needs }">
                   <option v-for="c in store.categories" :key="c" :value="c">{{ c }}</option>
                 </select>
               </td>
-              <td class="cell-edit">
+              <td class="cell-edit freq-col">
                 <select :value="sub.frequency" @change="updateField(sub.id, 'frequency', $event)">
                   <option v-for="f in frequencies" :key="f" :value="f">{{ f }}</option>
                 </select>
@@ -318,6 +318,10 @@ const fmt = (n) => Number(n).toFixed(2)
 .cat-border {
   border-left: 5px solid;
   border-radius: 2px 0 0 2px;
+}
+
+.freq-col select {
+  min-width: 100px;
 }
 
 .day-col {

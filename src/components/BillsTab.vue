@@ -149,7 +149,7 @@ const fmt = (n) => Number(n).toFixed(2)
                 </div>
               </td>
               <td class="cell-edit">
-                <select :value="bill.category || 'Needs'" @change="updateField(bill.id, 'category', $event)">
+                <select :value="bill.category || 'Needs'" @change="updateField(bill.id, 'category', $event)" :style="{ color: categoryColors[bill.category] || categoryColors.Needs }">
                   <option v-for="c in store.categories" :key="c" :value="c">{{ c }}</option>
                 </select>
               </td>
