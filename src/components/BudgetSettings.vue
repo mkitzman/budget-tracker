@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted, nextTick } from 'vue'
 import { useStore } from '../composables/useStore.js'
 
 const store = useStore()
@@ -71,13 +71,16 @@ function save() {
   emit('close')
 }
 
+const dialogRef = ref(null)
+onMounted(() => nextTick(() => dialogRef.value?.focus()))
+
 const categoryColors = { needs: '#0a84ff', wants: '#bf5af2', savings: '#30d158' }
 </script>
 
 <template>
-  <div class="confirm-overlay" @click.self="$emit('close')">
-    <div class="settings-dialog">
-      <h3>Budget Strategy</h3>
+  <div class="confirm-overlay" @click.self="$emit('close')" @keydown.escape="$emit('close')">
+    <div class="settings-dialog" role="dialog" aria-modal="true" aria-labelledby="budget-settings-title" ref="dialogRef" tabindex="-1">
+      <h3 id="budget-settings-title">Budget Strategy</h3>
 
       <div class="presets">
         <button

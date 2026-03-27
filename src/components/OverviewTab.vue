@@ -109,6 +109,7 @@ const subsBreakdown = computed(() => {
         <input
           ref="incomeInput"
           type="number"
+          min="0"
           v-model.number="store.income.value"
           @blur="finishEditIncome"
           @keydown.enter="finishEditIncome"
@@ -156,7 +157,9 @@ const subsBreakdown = computed(() => {
     <!-- Budget Breakdown -->
     <div class="mb-24">
       <div class="flex items-center justify-between mb-16">
-        <h2>{{ budgetLabel }}</h2>
+        <h2>{{ budgetLabel }}
+          <span class="budget-info-hint text-secondary text-sm" title="Allocate your income into Needs (essentials like rent, groceries), Wants (dining, entertainment), and Savings (investments, emergency fund).">&#9432;</span>
+        </h2>
         <button class="btn btn-secondary btn-sm" @click="showSettings = true">Adjust</button>
       </div>
       <div class="budget-categories">
@@ -509,6 +512,18 @@ const subsBreakdown = computed(() => {
 
 .text-warning { color: #F59E0B; }
 .text-critical { color: #EF4444; }
+
+.budget-info-hint {
+  cursor: help;
+  font-weight: 400;
+  margin-left: 4px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.budget-info-hint:hover {
+  opacity: 1;
+}
 
 .btn-sm {
   font-size: 12px;

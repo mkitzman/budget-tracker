@@ -40,6 +40,20 @@ const tabComponent = computed(() => {
   const map = { Overview: OverviewTab, Bills: BillsTab, Subscriptions: SubscriptionsTab, Expenses: ExpensesTab }
   return map[activeTab.value]
 })
+
+function handleTabKeydown(event, index) {
+  let newIndex
+  if (event.key === 'ArrowLeft') {
+    newIndex = index === 0 ? tabs.length - 1 : index - 1
+  } else if (event.key === 'ArrowRight') {
+    newIndex = index === tabs.length - 1 ? 0 : index + 1
+  } else {
+    return
+  }
+  event.preventDefault()
+  activeTab.value = tabs[newIndex]
+  document.getElementById(`tab-${tabs[newIndex]}`)?.focus()
+}
 </script>
 
 <template>
@@ -52,9 +66,10 @@ const tabComponent = computed(() => {
         </p>
       </div>
       <div class="header-right">
-        <div v-if="store.syncStatus.user.value" class="user-info" @click="signOut" title="Sign out">
-          <img v-if="store.syncStatus.user.value.photoURL" :src="store.syncStatus.user.value.photoURL" class="avatar" referrerpolicy="no-referrer" />
+        <div v-if="store.syncStatus.user.value" class="user-info" @click="signOut" role="button" tabindex="0" @keydown.enter="signOut" aria-label="Sign out">
+          <img v-if="store.syncStatus.user.value.photoURL" :src="store.syncStatus.user.value.photoURL" class="avatar" referrerpolicy="no-referrer" alt="" />
           <span class="text-sm text-secondary">{{ store.syncStatus.user.value.displayName || store.syncStatus.user.value.email }}</span>
+          <span class="sign-out-label text-sm">Sign out</span>
         </div>
         <a v-else class="sign-in-link text-sm" @click="signInWithGoogle">Sign in</a>
         <button class="theme-toggle" :class="{ dark: isDark }" @click="toggleTheme" :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'">
@@ -75,12 +90,17 @@ const tabComponent = computed(() => {
     </header>
 
     <nav class="tab-bar">
-      <div class="tab-buttons">
+      <div class="tab-buttons" role="tablist">
         <button
-          v-for="tab in tabs"
+          v-for="(tab, index) in tabs"
           :key="tab"
+          :id="`tab-${tab}`"
+          role="tab"
+          :aria-selected="activeTab === tab"
+          :tabindex="activeTab === tab ? 0 : -1"
           :class="['tab-btn', { active: activeTab === tab }]"
           @click="activeTab = tab"
+          @keydown="handleTabKeydown($event, index)"
         >
           {{ tab }}
         </button>
@@ -94,7 +114,7 @@ const tabComponent = computed(() => {
       </select>
     </nav>
 
-    <main class="tab-content">
+    <main class="tab-content" role="tabpanel" :aria-labelledby="`tab-${activeTab}`">
       <transition name="fade" mode="out-in">
         <component :is="tabComponent" :key="activeTab" />
       </transition>
@@ -138,6 +158,16 @@ const tabComponent = computed(() => {
   width: 28px;
   height: 28px;
   border-radius: 50%;
+}
+
+.sign-out-label {
+  color: var(--text-tertiary);
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.user-info:hover .sign-out-label {
+  color: var(--red);
 }
 
 .sign-in-link {

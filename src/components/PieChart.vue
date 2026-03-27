@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { Doughnut } from 'vue-chartjs'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 
@@ -17,11 +17,15 @@ const defaultColors = [
   '#64d2ff', '#ffd60a', '#ff6482', '#ac8e68', '#5e5ce6'
 ]
 
+const resolvedColors = computed(() =>
+  props.colors.length ? props.colors : defaultColors.slice(0, props.data.length)
+)
+
 const chartData = computed(() => ({
   labels: props.labels,
   datasets: [{
     data: props.data,
-    backgroundColor: props.colors.length ? props.colors : defaultColors.slice(0, props.data.length),
+    backgroundColor: resolvedColors.value,
     borderWidth: 0,
     hoverBorderWidth: 2,
     hoverBorderColor: '#fff'
@@ -48,12 +52,62 @@ const chartOptions = {
 }
 
 const hasData = computed(() => props.data.some(v => v > 0))
+
+const fmt = (n) => {
+  const num = Number(n) || 0
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+const total = computed(() => props.data.reduce((sum, v) => sum + (Number(v) || 0), 0))
+
+const VISIBLE_COUNT = 5
+const expanded = ref(false)
+
+const rankedItems = computed(() => {
+  const items = props.labels.map((label, i) => ({
+    label,
+    value: Number(props.data[i]) || 0,
+    color: resolvedColors.value[i] || '#8e8e93'
+  }))
+  return items
+    .filter(item => item.value > 0)
+    .sort((a, b) => b.value - a.value)
+})
+
+const visibleItems = computed(() =>
+  expanded.value ? rankedItems.value : rankedItems.value.slice(0, VISIBLE_COUNT)
+)
+
+const hasMore = computed(() => rankedItems.value.length > VISIBLE_COUNT)
+const hiddenCount = computed(() => rankedItems.value.length - VISIBLE_COUNT)
 </script>
 
 <template>
   <div class="pie-chart-wrapper card">
     <h3 class="mb-8">{{ title }}</h3>
-    <Doughnut v-if="hasData" :data="chartData" :options="chartOptions" />
+    <template v-if="hasData">
+      <div class="chart-area">
+        <Doughnut :data="chartData" :options="chartOptions" />
+        <div class="chart-center">
+          <span class="center-amount">${{ fmt(total) }}</span>
+        </div>
+      </div>
+      <div class="ranked-list">
+        <div v-for="(item, i) in visibleItems" :key="i" class="ranked-item">
+          <span class="ranked-dot" :style="{ background: item.color }" />
+          <span class="ranked-label">{{ item.label }}</span>
+          <span class="ranked-value">${{ fmt(item.value) }}</span>
+        </div>
+        <button
+          v-if="hasMore"
+          class="expand-btn"
+          :aria-expanded="expanded"
+          @click="expanded = !expanded"
+        >
+          {{ expanded ? 'Show less' : `${hiddenCount} more` }}
+        </button>
+      </div>
+    </template>
     <div v-else class="empty-chart">
       <p class="text-secondary text-sm">No data yet</p>
     </div>
@@ -64,6 +118,89 @@ const hasData = computed(() => props.data.some(v => v > 0))
 .pie-chart-wrapper {
   display: flex;
   flex-direction: column;
+}
+
+.chart-area {
+  position: relative;
+  max-width: 200px;
+  margin: 0 auto 12px;
+}
+
+.chart-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.center-amount {
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.ranked-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.ranked-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.ranked-item:last-child {
+  border-bottom: none;
+}
+
+.ranked-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ranked-label {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ranked-value {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.expand-btn {
+  display: block;
+  width: 100%;
+  padding: 6px 0;
+  border: none;
+  background: none;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  cursor: pointer;
+  text-align: center;
+  transition: opacity 0.2s;
+}
+
+.expand-btn:hover {
+  opacity: 0.7;
 }
 
 .empty-chart {

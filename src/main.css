@@ -215,7 +215,7 @@ input[type="number"]::-webkit-inner-spin-button {
 .data-table th .sort-arrow {
   display: inline-block;
   margin-left: 4px;
-  opacity: 0.4;
+  opacity: 0.55;
   transition: opacity 0.2s;
 }
 
@@ -467,6 +467,15 @@ input[type="number"]::-webkit-inner-spin-button {
   display: flex;
   gap: 12px;
   justify-content: center;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Dark mode select options */

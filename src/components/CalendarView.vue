@@ -69,6 +69,30 @@ const calendarDays = computed(() => {
 })
 
 const hoveredDay = ref(null)
+
+const fmt = (n) => {
+  const num = Number(n) || 0
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+function billAmountForView(bill) {
+  if (bill.seasonalRates && Object.keys(bill.seasonalRates).length > 0) {
+    const rate = bill.seasonalRates[viewMonth.value]
+    return rate !== undefined && rate !== null ? Number(rate) : Number(bill.amount) || 0
+  }
+  return Number(bill.amount) || 0
+}
+
+function subAmountForView(sub) {
+  if (sub.seasonalRates && Object.keys(sub.seasonalRates).length > 0) {
+    const rate = sub.seasonalRates[viewMonth.value]
+    return rate !== undefined && rate !== null ? Number(rate) : Number(sub.cost) || 0
+  }
+  const cost = Number(sub.cost) || 0
+  if (sub.frequency === 'Yearly') return cost / 12
+  if (sub.frequency === 'Quarterly') return cost / 3
+  return cost
+}
 </script>
 
 <template>
@@ -76,9 +100,9 @@ const hoveredDay = ref(null)
     <div class="flex items-center justify-between mb-16">
       <h3>Calendar</h3>
       <div class="flex items-center gap-8">
-        <button class="btn-icon" @click="prev">&larr;</button>
+        <button class="btn-icon" @click="prev" aria-label="Previous month">&larr;</button>
         <span class="month-label">{{ monthLabel }}</span>
-        <button class="btn-icon" @click="next">&rarr;</button>
+        <button class="btn-icon" @click="next" aria-label="Next month">&rarr;</button>
       </div>
     </div>
 
@@ -101,10 +125,10 @@ const hoveredDay = ref(null)
 
     <div v-if="hoveredDay && (hoveredDay.bills?.length || hoveredDay.subs?.length)" class="cal-tooltip">
       <div v-for="b in hoveredDay.bills" :key="'tb'+b.id" class="tooltip-item">
-        <span class="dot dot-bill" /> {{ b.name }} — ${{ Number(b.amount).toFixed(2) }}
+        <span class="dot dot-bill" /> {{ b.name }} — ${{ fmt(billAmountForView(b)) }}
       </div>
       <div v-for="s in hoveredDay.subs" :key="'ts'+s.id" class="tooltip-item">
-        <span class="dot dot-sub" /> {{ s.name }} — ${{ Number(s.cost).toFixed(2) }}
+        <span class="dot dot-sub" /> {{ s.name }} — ${{ fmt(subAmountForView(s)) }}
       </div>
     </div>
 

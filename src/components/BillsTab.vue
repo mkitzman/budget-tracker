@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { useStore } from '../composables/useStore.js'
 import SeasonalRatesEditor from './SeasonalRatesEditor.vue'
 
@@ -85,10 +85,18 @@ function onTableBlur(event) {
   }, 0)
 }
 
+const dialogRef = ref(null)
+watch(confirmDeleteId, (val) => {
+  if (val) nextTick(() => dialogRef.value?.focus())
+})
+
 const hasSeasonal = (bill) => bill.seasonalRates && Object.keys(bill.seasonalRates).length > 0
 const categoryColors = { Needs: '#0a84ff', Wants: '#bf5af2', Savings: '#30d158' }
 
-const fmt = (n) => Number(n).toFixed(2)
+const fmt = (n) => {
+  const num = Number(n) || 0
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
 </script>
 
 <template>
@@ -172,8 +180,8 @@ const fmt = (n) => Number(n).toFixed(2)
               </td>
               <td>
                 <div class="row-actions">
-                  <button class="btn-icon" :class="{ 'seasonal-active': hasSeasonal(bill) }" title="Seasonal rates" @click="toggleExpand(bill.id)">&#128197;</button>
-                  <button class="btn-icon" title="Delete" @click="confirmDelete(bill.id)">&#128465;</button>
+                  <button class="btn-icon" :class="{ 'seasonal-active': hasSeasonal(bill) }" title="Seasonal rates" aria-label="Seasonal rates" @click="toggleExpand(bill.id)">&#128197;</button>
+                  <button class="btn-icon" title="Delete" aria-label="Delete bill" @click="confirmDelete(bill.id)">&#128465;</button>
                 </div>
               </td>
             </tr>
@@ -199,9 +207,9 @@ const fmt = (n) => Number(n).toFixed(2)
     </div>
 
     <!-- Confirm delete dialog -->
-    <div v-if="confirmDeleteId" class="confirm-overlay" @click.self="confirmDeleteId = null">
-      <div class="confirm-dialog">
-        <h3>Delete Bill?</h3>
+    <div v-if="confirmDeleteId" class="confirm-overlay" @click.self="confirmDeleteId = null" @keydown.escape="confirmDeleteId = null">
+      <div class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-bill-title" ref="dialogRef" tabindex="-1">
+        <h3 id="delete-bill-title">Delete Bill?</h3>
         <p>This action cannot be undone.</p>
         <div class="actions">
           <button class="btn btn-secondary" @click="confirmDeleteId = null">Cancel</button>

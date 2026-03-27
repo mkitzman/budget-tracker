@@ -1,13 +1,20 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { useStore } from '../composables/useStore.js'
 
 const store = useStore()
 
 const confirmDeleteId = ref(null)
 const sortFrozen = ref(false)
+const dialogRef = ref(null)
+watch(confirmDeleteId, (val) => {
+  if (val) nextTick(() => dialogRef.value?.focus())
+})
 
-const fmt = (n) => Number(n).toFixed(2)
+const fmt = (n) => {
+  const num = Number(n) || 0
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
 
 function addExpense() {
   store.addExpense()
@@ -99,13 +106,13 @@ function toggleMonth(key) {
               </select>
             </td>
             <td class="cell-edit">
-              <input type="text" :value="exp.date" placeholder="e.g. 3/15" @input="updateField(exp.id, 'date', $event)" style="width: 80px" />
+              <input type="number" :value="exp.date" placeholder="Day" min="1" max="31" @input="updateField(exp.id, 'date', $event)" style="width: 70px" />
             </td>
             <td class="cell-edit">
               <input type="text" :value="exp.notes" placeholder="Notes" @input="updateField(exp.id, 'notes', $event)" />
             </td>
             <td>
-              <button class="btn-icon" title="Delete" @click="confirmDelete(exp.id)">&#128465;</button>
+              <button class="btn-icon" title="Delete" aria-label="Delete expense" @click="confirmDelete(exp.id)">&#128465;</button>
             </td>
           </tr>
         </tbody>
@@ -149,9 +156,9 @@ function toggleMonth(key) {
     </div>
 
     <!-- Confirm delete dialog -->
-    <div v-if="confirmDeleteId" class="confirm-overlay" @click.self="confirmDeleteId = null">
-      <div class="confirm-dialog">
-        <h3>Delete Expense?</h3>
+    <div v-if="confirmDeleteId" class="confirm-overlay" @click.self="confirmDeleteId = null" @keydown.escape="confirmDeleteId = null">
+      <div class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-expense-title" ref="dialogRef" tabindex="-1">
+        <h3 id="delete-expense-title">Delete Expense?</h3>
         <p>This action cannot be undone.</p>
         <div class="actions">
           <button class="btn btn-secondary" @click="confirmDeleteId = null">Cancel</button>

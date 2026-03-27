@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { useStore } from '../composables/useStore.js'
 import SeasonalRatesEditor from './SeasonalRatesEditor.vue'
 
@@ -81,6 +81,11 @@ function updateSeasonalRates(id, rates) {
   store.updateSubscription(id, 'seasonalRates', rates)
 }
 
+const dialogRef = ref(null)
+watch(confirmDeleteId, (val) => {
+  if (val) nextTick(() => dialogRef.value?.focus())
+})
+
 const hasSeasonal = (sub) => sub.seasonalRates && Object.keys(sub.seasonalRates).length > 0
 const categoryColors = { Needs: '#0a84ff', Wants: '#bf5af2', Savings: '#30d158' }
 
@@ -114,7 +119,10 @@ function onTableBlur(event) {
   }, 0)
 }
 
-const fmt = (n) => Number(n).toFixed(2)
+const fmt = (n) => {
+  const num = Number(n) || 0
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
 </script>
 
 <template>
@@ -210,8 +218,8 @@ const fmt = (n) => Number(n).toFixed(2)
               </td>
               <td>
                 <div class="row-actions">
-                  <button class="btn-icon" :class="{ 'seasonal-active': hasSeasonal(sub) }" title="Monthly rates" @click="toggleExpand(sub.id)">&#128197;</button>
-                  <button class="btn-icon" title="Delete" @click="confirmDelete(sub.id)">&#128465;</button>
+                  <button class="btn-icon" :class="{ 'seasonal-active': hasSeasonal(sub) }" title="Monthly rates" aria-label="Monthly rates" @click="toggleExpand(sub.id)">&#128197;</button>
+                  <button class="btn-icon" title="Delete" aria-label="Delete subscription" @click="confirmDelete(sub.id)">&#128465;</button>
                 </div>
               </td>
             </tr>
@@ -229,7 +237,7 @@ const fmt = (n) => Number(n).toFixed(2)
         <tfoot>
           <tr class="totals-row">
             <td colspan="4" style="text-align: right; font-weight: 600;">Totals:</td>
-            <td class="read-only money-col" style="font-weight: 700; color: var(--accent);">{{ fmt(totalCost) }}</td>
+            <td class="read-only money-col" style="font-weight: 700; color: var(--accent);">${{ fmt(totalCost) }}</td>
             <td class="read-only money-col" style="font-weight: 700; color: var(--accent);">${{ fmt(totalMonthly) }}</td>
             <td class="read-only money-col" style="font-weight: 700; color: var(--accent);">${{ fmt(totalYearly) }}</td>
             <td colspan="2"></td>
@@ -239,9 +247,9 @@ const fmt = (n) => Number(n).toFixed(2)
     </div>
 
     <!-- Confirm delete dialog -->
-    <div v-if="confirmDeleteId" class="confirm-overlay" @click.self="confirmDeleteId = null">
-      <div class="confirm-dialog">
-        <h3>Delete Subscription?</h3>
+    <div v-if="confirmDeleteId" class="confirm-overlay" @click.self="confirmDeleteId = null" @keydown.escape="confirmDeleteId = null">
+      <div class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-sub-title" ref="dialogRef" tabindex="-1">
+        <h3 id="delete-sub-title">Delete Subscription?</h3>
         <p>This action cannot be undone.</p>
         <div class="actions">
           <button class="btn btn-secondary" @click="confirmDeleteId = null">Cancel</button>
