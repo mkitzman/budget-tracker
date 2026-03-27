@@ -2,9 +2,10 @@
 import { computed } from 'vue'
 import { Bar } from 'vue-chartjs'
 import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js'
+import annotationPlugin from 'chartjs-plugin-annotation'
 import { useStore } from '../composables/useStore.js'
 
-ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend)
+ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend, annotationPlugin)
 
 const store = useStore()
 
@@ -58,6 +59,42 @@ const chartOptions = computed(() => ({
     }
   },
   plugins: {
+    annotation: {
+      annotations: {
+        needsLine: {
+          type: 'line',
+          yMin: incomeVal.value * (store.categoryTargets.value.Needs),
+          yMax: incomeVal.value * (store.categoryTargets.value.Needs),
+          borderColor: 'rgba(10, 132, 255, 0.5)',
+          borderWidth: 1.5,
+          borderDash: [6, 4],
+          label: {
+            display: true,
+            content: `Needs ${Math.round(store.categoryTargets.value.Needs * 100)}%`,
+            position: 'start',
+            font: { size: 10 },
+            backgroundColor: 'rgba(10, 132, 255, 0.8)',
+            padding: 3
+          }
+        },
+        wantsLine: {
+          type: 'line',
+          yMin: incomeVal.value * (store.categoryTargets.value.Needs + store.categoryTargets.value.Wants),
+          yMax: incomeVal.value * (store.categoryTargets.value.Needs + store.categoryTargets.value.Wants),
+          borderColor: 'rgba(191, 90, 242, 0.5)',
+          borderWidth: 1.5,
+          borderDash: [6, 4],
+          label: {
+            display: true,
+            content: `+ Wants ${Math.round(store.categoryTargets.value.Wants * 100)}%`,
+            position: 'start',
+            font: { size: 10 },
+            backgroundColor: 'rgba(191, 90, 242, 0.8)',
+            padding: 3
+          }
+        },
+      }
+    },
     legend: {
       position: 'bottom',
       labels: {
