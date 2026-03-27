@@ -3,11 +3,14 @@ import { ref, computed } from 'vue'
 import { useStore } from '../composables/useStore.js'
 import PieChart from './PieChart.vue'
 import CalendarView from './CalendarView.vue'
+import BudgetSettings from './BudgetSettings.vue'
+import MonthlyBreakdownChart from './MonthlyBreakdownChart.vue'
 
 const store = useStore()
 
 const editingIncome = ref(false)
 const incomeInput = ref(null)
+const showSettings = ref(false)
 
 function startEditIncome() {
   editingIncome.value = true
@@ -30,6 +33,25 @@ const fmt = (n) => {
 }
 
 const categoryColors = { Needs: '#0a84ff', Wants: '#bf5af2', Savings: '#30d158' }
+
+function progressColor(cat) {
+  const pct = store.categoryBreakdown.value[cat].pctUsed
+  if (pct >= 100) return '#EF4444'
+  if (pct >= 90) return '#F59E0B'
+  return categoryColors[cat]
+}
+
+function progressClass(cat) {
+  const pct = store.categoryBreakdown.value[cat].pctUsed
+  if (pct >= 100) return 'critical'
+  if (pct >= 90) return 'warning'
+  return ''
+}
+
+const budgetLabel = computed(() => {
+  const t = store.categoryTargets.value
+  return `${Math.round(t.Needs * 100)} / ${Math.round(t.Wants * 100)} / ${Math.round(t.Savings * 100)} Budget`
+})
 const categoryIcons = { Needs: 'N', Wants: 'W', Savings: 'S' }
 
 // Pie chart data
@@ -131,9 +153,12 @@ const subsBreakdown = computed(() => {
       </div>
     </div>
 
-    <!-- 50/30/20 Budget Breakdown -->
+    <!-- Budget Breakdown -->
     <div class="mb-24">
-      <h2 class="mb-16">50 / 30 / 20 Budget</h2>
+      <div class="flex items-center justify-between mb-16">
+        <h2>{{ budgetLabel }}</h2>
+        <button class="btn btn-secondary btn-sm" @click="showSettings = true">Adjust</button>
+      </div>
       <div class="budget-categories">
         <div
           v-for="cat in store.categories"
@@ -144,7 +169,7 @@ const subsBreakdown = computed(() => {
           <button class="budget-card-header" @click="toggleCategory(cat)">
             <div class="budget-card-left">
               <span class="cat-badge" :style="{ background: categoryColors[cat] }">
-                {{ Math.round(store.categoryTargets[cat] * 100) }}%
+                {{ Math.round(store.categoryTargets.value[cat] * 100) }}%
               </span>
               <div>
                 <div class="cat-name">{{ cat }}</div>
@@ -159,27 +184,27 @@ const subsBreakdown = computed(() => {
                 :style="{ color: store.categoryBreakdown.value[cat].remaining >= 0 ? 'var(--green)' : 'var(--red)' }"
               >
                 {{ store.categoryBreakdown.value[cat].remaining >= 0 ? '' : '-' }}${{ fmt(Math.abs(store.categoryBreakdown.value[cat].remaining)) }}
-                <span class="text-sm text-secondary">left</span>
+                <span class="text-sm text-secondary">{{ store.categoryBreakdown.value[cat].remaining >= 0 ? 'left' : 'over' }}</span>
               </div>
               <span class="chevron" :class="{ open: expandedCategory === cat }">&#9207;</span>
             </div>
           </button>
 
           <!-- Progress bar -->
-          <div class="progress-track">
+          <div class="progress-track" :class="progressClass(cat)">
             <div
               class="progress-fill"
               :style="{
                 width: Math.min(store.categoryBreakdown.value[cat].pctUsed, 100) + '%',
-                background: store.categoryBreakdown.value[cat].pctUsed > 100 ? 'var(--red)' : categoryColors[cat]
+                background: progressColor(cat)
               }"
             />
             <div v-if="store.categoryBreakdown.value[cat].pctUsed > 100" class="progress-overflow"
               :style="{ width: Math.min(store.categoryBreakdown.value[cat].pctUsed - 100, 100) + '%' }"
             />
           </div>
-          <div class="progress-label text-sm text-secondary">
-            {{ Math.round(store.categoryBreakdown.value[cat].pctUsed) }}% of {{ Math.round(store.categoryTargets[cat] * 100) }}% used
+          <div class="progress-label text-sm" :class="progressClass(cat) ? 'text-' + progressClass(cat) : 'text-secondary'">
+            {{ Math.round(store.categoryBreakdown.value[cat].pctUsed) }}% of {{ Math.round(store.categoryTargets.value[cat] * 100) }}% used
           </div>
 
           <!-- Reveal: item list -->
@@ -222,8 +247,16 @@ const subsBreakdown = computed(() => {
       />
     </div>
 
+    <!-- Monthly Stacked Bar Chart -->
+    <div class="mb-24">
+      <MonthlyBreakdownChart />
+    </div>
+
     <!-- Calendar -->
     <CalendarView />
+
+    <!-- Budget Settings Modal -->
+    <BudgetSettings v-if="showSettings" @close="showSettings = false" />
   </div>
 </template>
 
@@ -402,7 +435,20 @@ const subsBreakdown = computed(() => {
 .progress-fill {
   height: 100%;
   border-radius: 3px;
-  transition: width 0.4s ease;
+  transition: width 0.4s ease, background 0.3s ease;
+}
+
+.progress-track.warning .progress-fill {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.progress-track.critical .progress-fill {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
 .progress-overflow {
@@ -459,5 +505,13 @@ const subsBreakdown = computed(() => {
 .cat-item-amount {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+
+.text-warning { color: #F59E0B; }
+.text-critical { color: #EF4444; }
+
+.btn-sm {
+  font-size: 12px;
+  padding: 6px 14px;
 }
 </style>

@@ -8,6 +8,7 @@ const subscriptions = useFireSync('bt-subscriptions', [])
 const expenses = useFireSync('bt-expenses', [])
 const selectedMonth = ref(new Date().getMonth()) // 0-indexed, shared across all consumers
 const selectedYear = ref(new Date().getFullYear())
+const categoryTargets = ref({ Needs: 0.50, Wants: 0.30, Savings: 0.20 })
 
 const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December']
@@ -33,14 +34,17 @@ export function useStore() {
   })
 
   const categories = ['Needs', 'Wants', 'Savings']
-  const categoryTargets = { Needs: 0.50, Wants: 0.30, Savings: 0.20 }
+
+  function setCategoryTargets(targets) {
+    categoryTargets.value = { ...targets }
+  }
 
   const categoryBreakdown = computed(() => {
     const inc = Number(income.value) || 0
     const result = {}
 
     for (const cat of categories) {
-      const target = categoryTargets[cat]
+      const target = categoryTargets.value[cat]
       const budgeted = inc * target
 
       const billItems = bills.value
@@ -193,6 +197,36 @@ export function useStore() {
     return monthlyAmount(sub)
   }
 
+  function getSubscriptionAmountForMonth(sub, month) {
+    if (sub.seasonalRates && Object.keys(sub.seasonalRates).length > 0) {
+      const rate = sub.seasonalRates[month]
+      return rate !== undefined && rate !== null ? Number(rate) : Number(sub.cost) || 0
+    }
+    return monthlyAmount(sub)
+  }
+
+  function getBillAmountForMonth(bill, month) {
+    if (bill.seasonalRates && Object.keys(bill.seasonalRates).length > 0) {
+      const rate = bill.seasonalRates[month]
+      return rate !== undefined && rate !== null ? Number(rate) : Number(bill.amount) || 0
+    }
+    return Number(bill.amount) || 0
+  }
+
+  function getCategoryTotalsForMonth(month) {
+    const result = {}
+    for (const cat of categories) {
+      const billTotal = bills.value
+        .filter(b => b.category === cat)
+        .reduce((sum, b) => sum + getBillAmountForMonth(b, month), 0)
+      const subTotal = subscriptions.value
+        .filter(s => s.category === cat)
+        .reduce((sum, s) => sum + getSubscriptionAmountForMonth(s, month), 0)
+      result[cat] = billTotal + subTotal
+    }
+    return result
+  }
+
   function getBillCurrentAmount(bill) {
     if (bill.seasonalRates && Object.keys(bill.seasonalRates).length > 0) {
       const rate = bill.seasonalRates[selectedMonth.value]
@@ -217,12 +251,14 @@ export function useStore() {
     updateSubscription,
     deleteSubscription,
     getSubscriptionCurrentAmount,
+    getCategoryTotalsForMonth,
     getBillCurrentAmount,
     selectedMonth,
     selectedYear,
     monthNames,
     categories,
     categoryTargets,
+    setCategoryTargets,
     categoryBreakdown,
     expenses,
     addExpense,
