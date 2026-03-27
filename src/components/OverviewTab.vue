@@ -21,6 +21,7 @@ function finishEditIncome() {
   editingIncome.value = false
 }
 
+const showBudgetHint = ref(false)
 const expandedCategory = ref(null)
 
 function toggleCategory(cat) {
@@ -158,9 +159,12 @@ const subsBreakdown = computed(() => {
     <div class="mb-24">
       <div class="flex items-center justify-between mb-16">
         <h2>{{ budgetLabel }}
-          <span class="budget-info-hint text-secondary text-sm" title="Allocate your income into Needs (essentials like rent, groceries), Wants (dining, entertainment), and Savings (investments, emergency fund).">&#9432;</span>
+          <button class="budget-info-hint" :aria-expanded="showBudgetHint" aria-label="What is this?" @click="showBudgetHint = !showBudgetHint">&#9432;</button>
         </h2>
         <button class="btn btn-secondary btn-sm" @click="showSettings = true">Adjust</button>
+      </div>
+      <div v-if="showBudgetHint" class="budget-hint-text text-sm text-secondary">
+        Split your income into <strong>Needs</strong> (essentials like rent, groceries, utilities), <strong>Wants</strong> (dining, entertainment, subscriptions), and <strong>Savings</strong> (investments, emergency fund). Adjust the percentages with the button above.
       </div>
       <div class="budget-categories">
         <div
@@ -514,15 +518,32 @@ const subsBreakdown = computed(() => {
 .text-critical { color: #EF4444; }
 
 .budget-info-hint {
-  cursor: help;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 16px;
   font-weight: 400;
+  color: var(--text-tertiary);
   margin-left: 4px;
-  opacity: 0.6;
-  transition: opacity 0.2s;
+  padding: 0 2px;
+  vertical-align: middle;
+  transition: color 0.2s;
 }
 
 .budget-info-hint:hover {
-  opacity: 1;
+  color: var(--accent);
+}
+
+.budget-hint-text {
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.budget-hint-text strong {
+  color: var(--text-primary);
 }
 
 .btn-sm {
