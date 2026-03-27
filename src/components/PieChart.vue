@@ -33,15 +33,7 @@ const chartOptions = {
   maintainAspectRatio: true,
   cutout: '60%',
   plugins: {
-    legend: {
-      position: 'bottom',
-      labels: {
-        padding: 12,
-        usePointStyle: true,
-        pointStyle: 'circle',
-        font: { size: 12, family: '-apple-system, BlinkMacSystemFont, sans-serif' }
-      }
-    },
+    legend: { display: false },
     tooltip: {
       backgroundColor: 'rgba(28, 28, 30, 0.95)',
       titleFont: { size: 13, weight: '600' },

@@ -9,6 +9,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue'])
 
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+const currentMonth = new Date().getMonth()
 
 const rates = computed(() => {
   const obj = {}
@@ -37,7 +38,7 @@ function update(monthIdx, value) {
       Set monthly overrides. Empty = base amount (${{ baseAmount }}). Enter 0 for inactive months.
     </p>
     <div class="months-grid">
-      <div v-for="(label, idx) in months" :key="idx" class="month-input">
+      <div v-for="(label, idx) in months" :key="idx" class="month-input" :class="{ 'current-month': idx === currentMonth }">
         <label>{{ label }}</label>
         <input
           type="number"
@@ -78,6 +79,14 @@ function update(monthIdx, value) {
   font-size: 12px;
   font-weight: 600;
   color: var(--text-secondary);
+}
+
+.current-month label {
+  color: var(--accent);
+}
+
+.current-month input:not(:placeholder-shown) {
+  color: var(--accent);
 }
 
 .month-input input {
