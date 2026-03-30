@@ -8,7 +8,7 @@ const subscriptions = useFireSync('bt-subscriptions', [])
 const expenses = useFireSync('bt-expenses', [])
 const selectedMonth = ref(new Date().getMonth()) // 0-indexed, shared across all consumers
 const selectedYear = ref(new Date().getFullYear())
-const categoryTargets = ref({ Needs: 0.50, Wants: 0.30, Savings: 0.20 })
+const categoryTargets = useFireSync('bt-category-targets', { Needs: 0.50, Wants: 0.30, Savings: 0.20 })
 
 const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December']
