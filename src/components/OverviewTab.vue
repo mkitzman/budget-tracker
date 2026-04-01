@@ -295,8 +295,9 @@ const subsBreakdown = computed(() => {
 }
 
 .income-display .amount {
+  font-family: 'Manrope', system-ui;
   font-size: 48px;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: -1px;
 }
 

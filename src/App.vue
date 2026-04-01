@@ -124,7 +124,8 @@ function handleTabKeydown(event, index) {
 <style scoped>
 /* Header */
 .app-title {
-  font-family: 'Sora', system-ui;
+  font-family: 'Manrope', system-ui;
+  font-weight: 800;
 }
 
 .app-header {
