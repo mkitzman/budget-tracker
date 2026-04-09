@@ -4,6 +4,7 @@ import OverviewTab from './components/OverviewTab.vue'
 import BillsTab from './components/BillsTab.vue'
 import SubscriptionsTab from './components/SubscriptionsTab.vue'
 import ExpensesTab from './components/ExpensesTab.vue'
+import BonsaiIcon from './components/BonsaiIcon.vue'
 import { useStore } from './composables/useStore.js'
 import { signInWithGoogle, signOut } from './composables/useFireSync.js'
 
@@ -59,9 +60,14 @@ function handleTabKeydown(event, index) {
 <template>
     <header class="app-header">
       <div>
-        <h1 class="app-title">BittyBudget</h1>
+        <div class="app-title-row">
+          <h1 class="app-title">BonsaiBudget</h1>
+          <div class="app-icon-tile">
+            <BonsaiIcon class="app-icon" />
+          </div>
+        </div>
         <p class="text-secondary text-sm">
-          Subscriptions & bills at a glance
+          Cultivating Your Financial Future
           <span v-if="store.syncStatus.uid.value" class="sync-badge" :class="{ syncing: store.syncStatus.isSyncing.value }" title="Synced to cloud">&#9679;</span>
         </p>
       </div>
@@ -126,6 +132,31 @@ function handleTabKeydown(event, index) {
 .app-title {
   font-family: 'Manrope', system-ui;
   font-weight: 800;
+}
+
+.app-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.app-icon-tile {
+  position: relative;
+  width: 1em;
+  height: 1em;
+  font-size: var(--app-title-size, 2rem);
+  background: var(--green);
+  border-radius: 0.18em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.app-icon {
+  width: 78%;
+  height: 78%;
+  color: #ffffff;
 }
 
 .app-header {
