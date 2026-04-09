@@ -45,6 +45,39 @@
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
+/* ==========================================================================
+   Palettes — add new themes by defining a new [data-palette="..."] block.
+   --green (money) stays consistent across palettes.
+   ========================================================================== */
+
+[data-palette="bonsai"] {
+  --accent: #4F128C;
+  --accent-light: #7a3fb8;
+  --red: #8b1e2e;
+  --orange: #b8860b;
+  --yellow: #c9a227;
+  --teal: #3a8a85;
+
+  --bg: #f4f1e9;
+  --surface: #ffffff;
+  --surface-secondary: #faf8f1;
+  --border: #e8e3d5;
+  --border-light: #f1ede2;
+}
+
+[data-palette="bonsai"][data-theme="dark"] {
+  --accent: #7a3fb8;
+  --accent-light: #9a5ec0;
+  --red: #c94b5c;
+  --orange: #d4a437;
+
+  --bg: #18191a;
+  --surface: #23242a;
+  --surface-secondary: #2d2e35;
+  --border: #3a3b42;
+  --border-light: #2f3036;
+}
+
 *,
 *::before,
 *::after {

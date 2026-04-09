@@ -36,6 +36,23 @@ function getInitialTheme() {
 const isDark = ref(getInitialTheme() === 'dark')
 document.documentElement.setAttribute('data-theme', isDark.value ? 'dark' : 'light')
 
+// Palette (color theme)
+const PALETTES = [
+  { id: 'apple', label: 'Modern', swatches: ['#0a84ff', '#118C4F', '#ff453a'] },
+  { id: 'bonsai', label: 'Bonsai', swatches: ['#4F128C', '#118C4F', '#b8860b'] },
+]
+const palette = ref(localStorage.getItem('bt-palette') || 'apple')
+function applyPalette(p) {
+  if (p === 'apple') document.documentElement.removeAttribute('data-palette')
+  else document.documentElement.setAttribute('data-palette', p)
+}
+applyPalette(palette.value)
+function setPalette(p) {
+  palette.value = p
+  localStorage.setItem('bt-palette', p)
+  applyPalette(p)
+}
+
 function toggleTheme() {
   isDark.value = !isDark.value
   const theme = isDark.value ? 'dark' : 'light'
@@ -96,6 +113,24 @@ function handleTabKeydown(event, index) {
               <div class="user-dropdown-identity">
                 <div class="user-dropdown-name">{{ store.syncStatus.user.value.displayName || store.syncStatus.user.value.email }}</div>
                 <div v-if="store.syncStatus.user.value.displayName" class="user-dropdown-email text-sm text-secondary">{{ store.syncStatus.user.value.email }}</div>
+              </div>
+            </div>
+            <div class="user-dropdown-divider" />
+            <div class="user-dropdown-section">
+              <div class="user-dropdown-label">Color palette</div>
+              <div class="palette-options">
+                <button
+                  v-for="p in PALETTES"
+                  :key="p.id"
+                  class="palette-option"
+                  :class="{ active: palette === p.id }"
+                  @click.stop="setPalette(p.id)"
+                >
+                  <span class="palette-swatches">
+                    <span v-for="c in p.swatches" :key="c" class="palette-swatch" :style="{ background: c }" />
+                  </span>
+                  <span>{{ p.label }}</span>
+                </button>
               </div>
             </div>
             <div class="user-dropdown-divider" />
@@ -300,6 +335,60 @@ function handleTabKeydown(event, index) {
   justify-content: space-between;
   gap: 12px;
   cursor: default;
+}
+
+.user-dropdown-section {
+  padding: 8px 16px;
+}
+
+.user-dropdown-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-tertiary);
+  margin-bottom: 8px;
+}
+
+.palette-options {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.palette-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font: inherit;
+  color: var(--text-primary);
+  text-align: left;
+}
+
+.palette-option:hover {
+  background: var(--surface-secondary);
+}
+
+.palette-option.active {
+  border-color: var(--accent);
+  background: var(--surface-secondary);
+}
+
+.palette-swatches {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.palette-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
 }
 
 .theme-row:hover {
