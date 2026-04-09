@@ -511,6 +511,7 @@ function handleTabKeydown(event, index) {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   position: relative;
   border-bottom: 1px solid var(--border);
   margin-bottom: 28px;
@@ -518,6 +519,23 @@ function handleTabKeydown(event, index) {
 
 .tab-buttons {
   display: flex;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.tab-buttons::-webkit-scrollbar {
+  display: none;
+}
+
+.tab-btn {
+  flex-shrink: 0;
+}
+
+.month-select {
+  flex-shrink: 0;
 }
 
 .month-select {
