@@ -299,6 +299,7 @@ const subsBreakdown = computed(() => {
   font-size: 48px;
   font-weight: 800;
   letter-spacing: -1px;
+  color: var(--green);
 }
 
 .edit-hint {

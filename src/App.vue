@@ -1,16 +1,30 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import OverviewTab from './components/OverviewTab.vue'
 import BillsTab from './components/BillsTab.vue'
 import SubscriptionsTab from './components/SubscriptionsTab.vue'
 import ExpensesTab from './components/ExpensesTab.vue'
+import AboutTab from './components/AboutTab.vue'
 import BonsaiIcon from './components/BonsaiIcon.vue'
 import { useStore } from './composables/useStore.js'
 import { signInWithGoogle, signOut } from './composables/useFireSync.js'
 
 const store = useStore()
-const tabs = ['Overview', 'Bills', 'Subscriptions', 'Expenses']
+const tabs = ['Overview', 'Bills', 'Subscriptions', 'Expenses', 'About']
 const activeTab = ref('Overview')
+
+const userMenuOpen = ref(false)
+const userMenuRef = ref(null)
+function toggleUserMenu() { userMenuOpen.value = !userMenuOpen.value }
+function closeUserMenu() { userMenuOpen.value = false }
+function handleSignOut() { closeUserMenu(); signOut() }
+function handleClickOutside(e) {
+  if (userMenuOpen.value && userMenuRef.value && !userMenuRef.value.contains(e.target)) {
+    closeUserMenu()
+  }
+}
+onMounted(() => document.addEventListener('click', handleClickOutside))
+onBeforeUnmount(() => document.removeEventListener('click', handleClickOutside))
 
 // Theme
 function getInitialTheme() {
@@ -38,7 +52,7 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e)
 })
 
 const tabComponent = computed(() => {
-  const map = { Overview: OverviewTab, Bills: BillsTab, Subscriptions: SubscriptionsTab, Expenses: ExpensesTab }
+  const map = { Overview: OverviewTab, Bills: BillsTab, Subscriptions: SubscriptionsTab, Expenses: ExpensesTab, About: AboutTab }
   return map[activeTab.value]
 })
 
@@ -72,26 +86,41 @@ function handleTabKeydown(event, index) {
         </p>
       </div>
       <div class="header-right">
-        <div v-if="store.syncStatus.user.value" class="user-info" @click="signOut" role="button" tabindex="0" @keydown.enter="signOut" aria-label="Sign out">
-          <img v-if="store.syncStatus.user.value.photoURL" :src="store.syncStatus.user.value.photoURL" class="avatar" referrerpolicy="no-referrer" alt="" />
-          <span class="text-sm text-secondary">{{ store.syncStatus.user.value.displayName || store.syncStatus.user.value.email }}</span>
-          <span class="sign-out-label text-sm">Sign out</span>
+        <div v-if="store.syncStatus.user.value" class="user-menu" ref="userMenuRef">
+          <button class="avatar-btn" @click="toggleUserMenu" :aria-expanded="userMenuOpen" aria-haspopup="true" aria-label="Account menu">
+            <img v-if="store.syncStatus.user.value.photoURL" :src="store.syncStatus.user.value.photoURL" class="avatar" referrerpolicy="no-referrer" alt="" />
+          </button>
+          <div v-if="userMenuOpen" class="user-dropdown" role="menu">
+            <div class="user-dropdown-header">
+              <img v-if="store.syncStatus.user.value.photoURL" :src="store.syncStatus.user.value.photoURL" class="avatar avatar-lg" referrerpolicy="no-referrer" alt="" />
+              <div class="user-dropdown-identity">
+                <div class="user-dropdown-name">{{ store.syncStatus.user.value.displayName || store.syncStatus.user.value.email }}</div>
+                <div v-if="store.syncStatus.user.value.displayName" class="user-dropdown-email text-sm text-secondary">{{ store.syncStatus.user.value.email }}</div>
+              </div>
+            </div>
+            <div class="user-dropdown-divider" />
+            <div class="user-dropdown-item theme-row" role="menuitem">
+              <span>{{ isDark ? 'Dark mode' : 'Light mode' }}</span>
+              <button class="theme-toggle" :class="{ dark: isDark }" @click.stop="toggleTheme" :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'">
+                <div class="toggle-track">
+                  <div class="toggle-thumb">
+                    <div class="crater crater-1" />
+                    <div class="crater crater-2" />
+                    <div class="crater crater-3" />
+                  </div>
+                  <div class="stars">
+                    <div class="star star-1" />
+                    <div class="star star-2" />
+                    <div class="star star-3" />
+                  </div>
+                </div>
+              </button>
+            </div>
+            <div class="user-dropdown-divider" />
+            <button class="user-dropdown-item" role="menuitem" @click="handleSignOut">Sign out</button>
+          </div>
         </div>
         <a v-else class="sign-in-link text-sm" @click="signInWithGoogle">Sign in</a>
-        <button class="theme-toggle" :class="{ dark: isDark }" @click="toggleTheme" :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'">
-          <div class="toggle-track">
-            <div class="toggle-thumb">
-              <div class="crater crater-1" />
-              <div class="crater crater-2" />
-              <div class="crater crater-3" />
-            </div>
-            <div class="stars">
-              <div class="star star-1" />
-              <div class="star star-2" />
-              <div class="star star-3" />
-            </div>
-          </div>
-        </button>
       </div>
     </header>
 
@@ -172,34 +201,110 @@ function handleTabKeydown(event, index) {
   gap: 16px;
 }
 
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: var(--radius-sm);
-  transition: background 0.2s;
+.user-menu {
+  position: relative;
 }
 
-.user-info:hover {
-  background: var(--surface-secondary);
+.avatar-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 50%;
+  line-height: 0;
+  transition: box-shadow 0.2s;
+}
+
+.avatar-btn:hover,
+.avatar-btn:focus-visible {
+  box-shadow: 0 0 0 2px var(--green);
+  outline: none;
 }
 
 .avatar {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
+  display: block;
 }
 
-.sign-out-label {
-  color: var(--text-tertiary);
-  font-weight: 500;
-  transition: color 0.2s;
+.avatar-lg {
+  width: 40px;
+  height: 40px;
 }
 
-.user-info:hover .sign-out-label {
+.user-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 240px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  padding: 8px 0;
+  z-index: 100;
+}
+
+.user-dropdown-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px 12px;
+}
+
+.user-dropdown-identity {
+  min-width: 0;
+}
+
+.user-dropdown-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-dropdown-email {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-dropdown-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+.user-dropdown-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 10px 16px;
+  font: inherit;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.user-dropdown-item:hover {
+  background: var(--surface-secondary);
   color: var(--red);
+}
+
+.theme-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: default;
+}
+
+.theme-row:hover {
+  background: transparent;
+  color: var(--text-primary);
 }
 
 .sign-in-link {
@@ -334,7 +439,7 @@ function handleTabKeydown(event, index) {
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface);
-  color: var(--accent);
+  color: var(--green);
   cursor: pointer;
   appearance: none;
   width: auto;
@@ -346,13 +451,13 @@ function handleTabKeydown(event, index) {
 }
 
 .month-select:hover {
-  border-color: var(--accent);
+  border-color: var(--green);
 }
 
 .month-select:focus {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.15);
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(17, 140, 79, 0.15);
 }
 
 .tab-btn {
@@ -373,7 +478,7 @@ function handleTabKeydown(event, index) {
 }
 
 .tab-btn.active {
-  color: var(--accent);
+  color: var(--green);
 }
 
 .tab-btn.active::after {
@@ -383,7 +488,7 @@ function handleTabKeydown(event, index) {
   left: 0;
   right: 0;
   height: 2.5px;
-  background: var(--accent);
+  background: var(--green);
   border-radius: 2px 2px 0 0;
   animation: slideIn 0.25s ease;
 }

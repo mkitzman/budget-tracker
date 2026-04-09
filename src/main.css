@@ -70,7 +70,7 @@ body {
 
 /* Typography */
 h1 { font-size: 34px; font-weight: 700; letter-spacing: -0.5px; }
-h2 { font-family: 'Manrope', system-ui; font-size: 22px; font-weight: 800; letter-spacing: -0.3px; }
+h2 { font-family: 'Manrope', system-ui; font-size: 22px; font-weight: 800; letter-spacing: -0.3px; color: var(--green); }
 h3 { font-size: 17px; font-weight: 600; }
 .text-secondary { color: var(--text-secondary); }
 .text-sm { font-size: 13px; }
