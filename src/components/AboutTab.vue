@@ -54,6 +54,9 @@
       future.
     </p>
     <p class="tagline">Cultivate your wealth, one cent at a time.</p>
+    <p class="studio-credit">
+      <a href="https://www.michaelkitzman.com/" target="_blank" rel="noreferrer">An Unreal City project</a>
+    </p>
   </section>
 </template>
 
@@ -98,5 +101,22 @@
   font-style: italic;
   color: var(--green) !important;
   font-weight: 600;
+}
+
+.studio-credit {
+  margin-top: 32px;
+}
+
+.studio-credit a {
+  color: var(--text-tertiary);
+  text-decoration: none;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  font-style: italic;
+  transition: color 0.2s;
+}
+
+.studio-credit a:hover {
+  color: var(--text-primary);
 }
 </style>
