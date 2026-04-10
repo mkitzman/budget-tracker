@@ -41,6 +41,13 @@ export async function signInWithGoogle() {
 export async function signOut() {
   try {
     await firebaseSignOut(auth)
+    const keysToRemove = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key.startsWith('bt-')) keysToRemove.push(key)
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key))
+    window.location.reload()
   } catch (err) {
     console.warn('Sign-out failed:', err.message)
   }
