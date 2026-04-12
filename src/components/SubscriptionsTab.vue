@@ -87,7 +87,11 @@ watch(confirmDeleteId, (val) => {
 })
 
 const hasSeasonal = (sub) => sub.seasonalRates && Object.keys(sub.seasonalRates).length > 0
-const categoryColors = { Needs: '#0a84ff', Wants: '#bf5af2', Savings: '#30d158' }
+const categoryColors = {
+  get Needs() { return getComputedStyle(document.documentElement).getPropertyValue('--cat-needs').trim() },
+  get Wants() { return getComputedStyle(document.documentElement).getPropertyValue('--cat-wants').trim() },
+  get Savings() { return getComputedStyle(document.documentElement).getPropertyValue('--cat-savings').trim() },
+}
 
 const totalMonthly = computed(() =>
   store.subscriptions.value

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, provide } from 'vue'
 import OverviewTab from './components/OverviewTab.vue'
 import BillsTab from './components/BillsTab.vue'
 import SubscriptionsTab from './components/SubscriptionsTab.vue'
@@ -38,8 +38,8 @@ document.documentElement.setAttribute('data-theme', isDark.value ? 'dark' : 'lig
 
 // Palette (color theme)
 const PALETTES = [
-  { id: 'apple', label: 'Modern', swatches: ['#0a84ff', '#118C4F', '#ff453a'] },
-  { id: 'bonsai', label: 'Bonsai', swatches: ['#4F128C', '#118C4F', '#b8860b'] },
+  { id: 'apple', label: 'Modern', swatches: ['#0a84ff', '#2A684A', '#bf5af2'] },
+  { id: 'bonsai', label: 'Bonsai', swatches: ['#4F128C', '#2A684A', '#b8860b'] },
 ]
 const palette = ref(localStorage.getItem('bt-palette') || 'apple')
 function applyPalette(p) {
@@ -47,6 +47,7 @@ function applyPalette(p) {
   else document.documentElement.setAttribute('data-palette', p)
 }
 applyPalette(palette.value)
+provide('palette', palette)
 function setPalette(p) {
   palette.value = p
   localStorage.setItem('bt-palette', p)
@@ -564,7 +565,7 @@ function handleTabKeydown(event, index) {
 .month-select:focus {
   outline: none;
   border-color: var(--green);
-  box-shadow: 0 0 0 3px rgba(17, 140, 79, 0.15);
+  box-shadow: 0 0 0 3px rgba(42, 104, 74, 0.15);
 }
 
 .tab-btn {

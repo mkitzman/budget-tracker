@@ -74,7 +74,11 @@ function save() {
 const dialogRef = ref(null)
 onMounted(() => nextTick(() => dialogRef.value?.focus()))
 
-const categoryColors = { needs: '#0a84ff', wants: '#bf5af2', savings: '#30d158' }
+const categoryColors = {
+  get needs() { return getComputedStyle(document.documentElement).getPropertyValue('--cat-needs').trim() },
+  get wants() { return getComputedStyle(document.documentElement).getPropertyValue('--cat-wants').trim() },
+  get savings() { return getComputedStyle(document.documentElement).getPropertyValue('--cat-savings').trim() },
+}
 </script>
 
 <template>
@@ -97,7 +101,7 @@ const categoryColors = { needs: '#0a84ff', wants: '#bf5af2', savings: '#30d158' 
       <div class="sliders">
         <div class="slider-row">
           <label>
-            <span class="slider-dot" style="background: #0a84ff" />
+            <span class="slider-dot" :style="{ background: categoryColors.needs }" />
             Needs
           </label>
           <input type="range" min="0" max="100" :value="needs" @input="onSlider('needs', $event)" />
@@ -105,7 +109,7 @@ const categoryColors = { needs: '#0a84ff', wants: '#bf5af2', savings: '#30d158' 
         </div>
         <div class="slider-row">
           <label>
-            <span class="slider-dot" style="background: #bf5af2" />
+            <span class="slider-dot" :style="{ background: categoryColors.wants }" />
             Wants
           </label>
           <input type="range" min="0" max="100" :value="wants" @input="onSlider('wants', $event)" />
@@ -113,7 +117,7 @@ const categoryColors = { needs: '#0a84ff', wants: '#bf5af2', savings: '#30d158' 
         </div>
         <div class="slider-row">
           <label>
-            <span class="slider-dot" style="background: #30d158" />
+            <span class="slider-dot" :style="{ background: categoryColors.savings }" />
             Savings
           </label>
           <input type="range" min="0" max="100" :value="savings" @input="onSlider('savings', $event)" />
@@ -122,9 +126,9 @@ const categoryColors = { needs: '#0a84ff', wants: '#bf5af2', savings: '#30d158' 
       </div>
 
       <div class="preview-bar">
-        <div class="preview-segment" :style="{ width: needs + '%', background: '#0a84ff' }" />
-        <div class="preview-segment" :style="{ width: wants + '%', background: '#bf5af2' }" />
-        <div class="preview-segment" :style="{ width: savings + '%', background: '#30d158' }" />
+        <div class="preview-segment" :style="{ width: needs + '%', background: categoryColors.needs }" />
+        <div class="preview-segment" :style="{ width: wants + '%', background: categoryColors.wants }" />
+        <div class="preview-segment" :style="{ width: savings + '%', background: categoryColors.savings }" />
       </div>
 
       <div class="actions">

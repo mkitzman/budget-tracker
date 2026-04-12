@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, inject } from 'vue'
 import { Bar } from 'vue-chartjs'
 import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js'
 import annotationPlugin from 'chartjs-plugin-annotation'
@@ -8,10 +8,16 @@ import { useStore } from '../composables/useStore.js'
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend, annotationPlugin)
 
 const store = useStore()
+const palette = inject('palette')
+
+function getCSSVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+}
 
 const shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 const chartData = computed(() => {
+  void palette.value
   const needsData = []
   const wantsData = []
   const savingsData = []
@@ -26,9 +32,9 @@ const chartData = computed(() => {
   return {
     labels: shortMonths,
     datasets: [
-      { label: 'Needs', data: needsData, backgroundColor: '#0a84ff', borderRadius: 2 },
-      { label: 'Wants', data: wantsData, backgroundColor: '#bf5af2', borderRadius: 2 },
-      { label: 'Savings', data: savingsData, backgroundColor: '#30d158', borderRadius: 2 },
+      { label: 'Needs', data: needsData, backgroundColor: getCSSVar('--cat-needs'), borderRadius: 2 },
+      { label: 'Wants', data: wantsData, backgroundColor: getCSSVar('--cat-wants'), borderRadius: 2 },
+      { label: 'Savings', data: savingsData, backgroundColor: getCSSVar('--cat-savings'), borderRadius: 2 },
     ]
   }
 })
@@ -65,7 +71,7 @@ const chartOptions = computed(() => ({
           type: 'line',
           yMin: incomeVal.value * (store.categoryTargets.value.Needs),
           yMax: incomeVal.value * (store.categoryTargets.value.Needs),
-          borderColor: 'rgba(10, 132, 255, 0.5)',
+          borderColor: getCSSVar('--cat-needs') + '80',
           borderWidth: 1.5,
           borderDash: [6, 4],
           label: {
@@ -73,7 +79,7 @@ const chartOptions = computed(() => ({
             content: `Needs ${Math.round(store.categoryTargets.value.Needs * 100)}%`,
             position: 'start',
             font: { size: 10 },
-            backgroundColor: 'rgba(10, 132, 255, 0.8)',
+            backgroundColor: getCSSVar('--cat-needs') + 'cc',
             padding: 3
           }
         },
@@ -81,7 +87,7 @@ const chartOptions = computed(() => ({
           type: 'line',
           yMin: incomeVal.value * (store.categoryTargets.value.Needs + store.categoryTargets.value.Wants),
           yMax: incomeVal.value * (store.categoryTargets.value.Needs + store.categoryTargets.value.Wants),
-          borderColor: 'rgba(191, 90, 242, 0.5)',
+          borderColor: getCSSVar('--cat-wants') + '80',
           borderWidth: 1.5,
           borderDash: [6, 4],
           label: {
@@ -89,7 +95,7 @@ const chartOptions = computed(() => ({
             content: `+ Wants ${Math.round(store.categoryTargets.value.Wants * 100)}%`,
             position: 'start',
             font: { size: 10 },
-            backgroundColor: 'rgba(191, 90, 242, 0.8)',
+            backgroundColor: getCSSVar('--cat-wants') + 'cc',
             padding: 3
           }
         },

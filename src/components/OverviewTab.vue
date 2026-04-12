@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, inject } from 'vue'
 import { useStore } from '../composables/useStore.js'
 import PieChart from './PieChart.vue'
 import CalendarView from './CalendarView.vue'
@@ -7,6 +7,7 @@ import BudgetSettings from './BudgetSettings.vue'
 import MonthlyBreakdownChart from './MonthlyBreakdownChart.vue'
 
 const store = useStore()
+const palette = inject('palette')
 
 const editingIncome = ref(false)
 const incomeInput = ref(null)
@@ -33,13 +34,23 @@ const fmt = (n) => {
   return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-const categoryColors = { Needs: '#0a84ff', Wants: '#bf5af2', Savings: '#30d158' }
+function getCSSVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+}
+const categoryColors = computed(() => {
+  void palette.value // reactive trigger on palette change
+  return {
+    Needs: getCSSVar('--cat-needs'),
+    Wants: getCSSVar('--cat-wants'),
+    Savings: getCSSVar('--cat-savings'),
+  }
+})
 
 function progressColor(cat) {
   const pct = store.categoryBreakdown.value[cat].pctUsed
   if (pct >= 100) return '#EF4444'
   if (pct >= 90) return '#F59E0B'
-  return categoryColors[cat]
+  return categoryColors.value[cat]
 }
 
 function progressClass(cat) {
@@ -57,21 +68,22 @@ const categoryIcons = { Needs: 'N', Wants: 'W', Savings: 'S' }
 
 // Pie chart data
 const incomeBreakdown = computed(() => {
+  void palette.value
   const hasExpenses = store.totalExpenses.value > 0
   const finalRemaining = hasExpenses ? store.adjustedRemaining.value : store.remaining.value
   const labels = ['Bills', 'Subscriptions']
   const data = [store.totalBills.value, store.totalSubscriptions.value]
-  const colors = ['#ff9f0a', '#0a84ff']
+  const colors = [getCSSVar('--orange'), getCSSVar('--teal')]
 
   if (hasExpenses) {
     labels.push('Expenses')
     data.push(store.totalExpenses.value)
-    colors.push('#ff453a')
+    colors.push(getCSSVar('--red'))
   }
 
   labels.push(finalRemaining >= 0 ? 'Remaining' : 'Over Budget')
   data.push(Math.abs(finalRemaining))
-  colors.push(finalRemaining >= 0 ? '#30d158' : '#ff453a')
+  colors.push(finalRemaining >= 0 ? getCSSVar('--green') : getCSSVar('--red'))
 
   return { labels, data, colors }
 })

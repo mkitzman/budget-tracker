@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, inject } from 'vue'
 import { Doughnut } from 'vue-chartjs'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 
@@ -12,13 +12,27 @@ const props = defineProps({
   title: { type: String, default: '' }
 })
 
-const defaultColors = [
-  '#0a84ff', '#30d158', '#ff9f0a', '#ff453a', '#bf5af2',
-  '#64d2ff', '#ffd60a', '#ff6482', '#ac8e68', '#5e5ce6'
-]
+const palette = inject('palette', ref('apple'))
+
+function getCSSVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+}
+
+const defaultColors = computed(() => {
+  void palette.value
+  const g = getCSSVar('--green')
+  const o = getCSSVar('--orange')
+  const r = getCSSVar('--red')
+  const t = getCSSVar('--teal')
+  const y = getCSSVar('--yellow')
+  const cn = getCSSVar('--cat-needs')
+  const cw = getCSSVar('--cat-wants')
+  const cs = getCSSVar('--cat-savings')
+  return [cn, o, cw, r, cs, t, y, g, '#9b7a7a', '#8c7b6b']
+})
 
 const resolvedColors = computed(() =>
-  props.colors.length ? props.colors : defaultColors.slice(0, props.data.length)
+  props.colors.length ? props.colors : defaultColors.value.slice(0, props.data.length)
 )
 
 const chartData = computed(() => ({
