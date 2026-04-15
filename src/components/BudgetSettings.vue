@@ -8,6 +8,7 @@ const emit = defineEmits(['close'])
 const needs = ref(Math.round(store.categoryTargets.value.Needs * 100))
 const wants = ref(Math.round(store.categoryTargets.value.Wants * 100))
 const savings = ref(Math.round(store.categoryTargets.value.Savings * 100))
+const includeExpenses = ref(store.includeExpenses.value)
 
 const presets = [
   { label: 'Standard', values: [50, 30, 20] },
@@ -68,6 +69,7 @@ function save() {
     Wants: wants.value / 100,
     Savings: savings.value / 100
   })
+  store.includeExpenses.value = includeExpenses.value
   emit('close')
 }
 
@@ -130,6 +132,18 @@ const categoryColors = {
         <div class="preview-segment" :style="{ width: wants + '%', background: categoryColors.wants }" />
         <div class="preview-segment" :style="{ width: savings + '%', background: categoryColors.savings }" />
       </div>
+
+      <label class="toggle-row">
+        <span class="toggle-label">
+          Include Expenses
+          <span class="toggle-hint">Factor one-time expenses into the budget</span>
+        </span>
+        <span class="toggle-switch" :class="{ on: includeExpenses }">
+          <input type="checkbox" v-model="includeExpenses" />
+          <span class="toggle-track" />
+          <span class="toggle-thumb" />
+        </span>
+      </label>
 
       <div class="actions">
         <button class="btn btn-secondary" @click="$emit('close')">Cancel</button>
@@ -259,5 +273,77 @@ const categoryColors = {
   display: flex;
   gap: 12px;
   justify-content: center;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  margin-bottom: 8px;
+  border-top: 1px solid var(--border-light);
+  cursor: pointer;
+}
+
+.toggle-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.toggle-hint {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 40px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  background: var(--border);
+  border-radius: 11px;
+  transition: background 0.2s;
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  transition: transform 0.2s;
+}
+
+.toggle-switch.on .toggle-track {
+  background: var(--accent);
+}
+
+.toggle-switch.on .toggle-thumb {
+  transform: translateX(18px);
 }
 </style>

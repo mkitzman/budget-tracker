@@ -69,7 +69,7 @@ const categoryIcons = { Needs: 'N', Wants: 'W', Savings: 'S' }
 // Pie chart data
 const incomeBreakdown = computed(() => {
   void palette.value
-  const hasExpenses = store.totalExpenses.value > 0
+  const hasExpenses = store.includeExpenses.value && store.totalExpenses.value > 0
   const finalRemaining = hasExpenses ? store.adjustedRemaining.value : store.remaining.value
   const labels = ['Bills', 'Subscriptions']
   const data = [store.totalBills.value, store.totalSubscriptions.value]

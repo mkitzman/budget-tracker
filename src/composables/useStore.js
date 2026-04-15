@@ -9,6 +9,7 @@ const expenses = useFireSync('bt-expenses', [])
 const selectedMonth = ref(new Date().getMonth()) // 0-indexed, shared across all consumers
 const selectedYear = ref(new Date().getFullYear())
 const categoryTargets = useFireSync('bt-category-targets', { Needs: 0.50, Wants: 0.30, Savings: 0.20 })
+const includeExpenses = useFireSync('bt-include-expenses', true)
 
 const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December']
@@ -55,9 +56,11 @@ export function useStore() {
         .filter(s => s.category === cat)
         .map(s => ({ name: s.name || 'Unnamed', amount: getSubscriptionCurrentAmount(s), type: 'subscription' }))
 
-      const expItems = monthExpenses.value
-        .filter(e => e.category === cat)
-        .map(e => ({ name: e.name || 'Unnamed', amount: Number(e.amount) || 0, type: 'expense' }))
+      const expItems = includeExpenses.value
+        ? monthExpenses.value
+            .filter(e => e.category === cat)
+            .map(e => ({ name: e.name || 'Unnamed', amount: Number(e.amount) || 0, type: 'expense' }))
+        : []
 
       const items = [...billItems, ...subItems, ...expItems]
       const spent = items.reduce((sum, i) => sum + i.amount, 0)
@@ -169,6 +172,7 @@ export function useStore() {
   })
 
   const adjustedRemaining = computed(() => {
+    if (!includeExpenses.value) return remaining.value
     return remaining.value - totalExpenses.value
   })
 
@@ -259,6 +263,7 @@ export function useStore() {
     categories,
     categoryTargets,
     setCategoryTargets,
+    includeExpenses,
     categoryBreakdown,
     expenses,
     addExpense,
